@@ -1,0 +1,45 @@
+seed_everything: 42
+
+model:
+  class_path: models.ConvolutionalAutoencoder
+  init_args:
+    bottleneck: 2
+    # rotations: 36
+
+data:
+  class_path: data.SubcubeDataModule
+  init_args:
+    data_directories: ["/home/ace/Documents/prp_files"]
+    extension: '.hdf5'
+    sc_side_length: 32
+    stride: 32
+    indexing: SliceCubeIndex
+    physical_parameters: ['dens','temp']
+    batch_size: 32
+    num_workers: 1
+    shuffle: True
+    flip: 0.5
+
+optimizer:
+  class_path: torch.optim.Adam
+  init_args:
+    lr: 0.001
+
+lr_scheduler:
+  class_path: lightning.pytorch.cli.ReduceLROnPlateau
+  init_args:
+    mode: min
+    factor: 0.1
+    patience: 500
+    cooldown: 500
+    min_lr: 1.e-5
+    monitor: train_loss
+    verbose: True
+
+trainer:
+  max_epochs: -1
+  accelerator: cpu
+  # devices: 4
+  # precision: 32
+
+# ckpt_path: spitzer_model.ckpt
