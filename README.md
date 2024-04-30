@@ -54,6 +54,69 @@ After installing the prerequisites we need to pick a [NGC Container](https://cat
 docker run --gpus all -it nvcr.io/nvidia/pytorch:24.03-py3
 ```
 
+### Quick Updates
+
+Please make sure that if you are using a Docker container and want to install the package you may need to run:
+
+```bash
+apt update
+apt upgrage
+```
+
+If you are using a virtual enviroment you may need to run:
+
+```bash
+apt-get install python3-venv
+```
+
+After which you can just run a virtualenviroment inside the container and install everything using the ```enviroments.txt```.
+
 ## Further reading
 
 For further informations please refer to the [Documentation]() and the [Author](timfabianboes96@gmail.com)
+
+## Some useful docker commands
+
+Docker Cheat sheet
+
+List the previous containers
+
+```bash
+docker ps -a
+```
+
+attach to a docker container
+
+```bash
+docker attach <container name>
+```
+
+start an interactive container
+
+```bash
+docker run -it <container name>
+```
+
+start detached container
+
+```bash
+docker run -d <container name>
+```
+
+rename container
+
+```bash
+docker rename <old name> <new name>
+```
+
+build a docker container
+
+```bash
+docker build ???
+```
+
+save changes into new container
+
+```bash
+docker commit <containerID> <repository>:<tag>
+```
