@@ -5,6 +5,10 @@ from lightning.pytorch.cli import LightningCLI
 import models
 import data
 import setup
+import wandb
+from lightning.pytorch.loggers import WandbLogger
+
+wandb.login()
 
 torch.set_float32_matmul_precision('high')
 

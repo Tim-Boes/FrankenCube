@@ -9,7 +9,7 @@ model:
 data:
   class_path: data.SubcubeDataModule
   init_args:
-    data_directories: ["/home/ace/Documents/prp_files"]
+    data_directories: ["/media/ace/Warehouse/prp_files"]
     extension: '.hdf5'
     sc_side_length: 32
     stride: 32
@@ -39,6 +39,11 @@ lr_scheduler:
 trainer:
   max_epochs: -1
   accelerator: cpu
+  logger:
+    class_path: lightning.pytorch.loggers.WandbLogger
+    init_args:
+      project: frankencube
+      log_model: True
   # devices: 4
   # precision: 32
 

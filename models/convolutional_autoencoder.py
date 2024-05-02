@@ -4,8 +4,6 @@ import lightning as L
 import torch.nn as nn
 import torch
 import torch.nn.functional as F
-import wandb
-from pytorch_lightning.loggers import WandbLogger
 
 
 class ConvolutionalAutoencoder(L.LightningModule):
@@ -22,6 +20,7 @@ class ConvolutionalAutoencoder(L.LightningModule):
             bottleneck (int, optional): The bottleneck used for the
             neural network. Defaults to 2.
         """
+
         super().__init__()
         self.bottleneck = bottleneck
 
