@@ -9,7 +9,7 @@ model:
 data:
   class_path: data.SubcubeDataModule
   init_args:
-    data_directories: ["/media/ace/Warehouse/prp_files"]
+    data_directories: ["/root/prp_files"]
     extension: '.hdf5'
     sc_side_length: 32
     stride: 32
@@ -38,7 +38,7 @@ lr_scheduler:
 
 trainer:
   max_epochs: -1
-  accelerator: cpu
+  accelerator: gpu
   logger:
     class_path: lightning.pytorch.loggers.WandbLogger
     init_args:
