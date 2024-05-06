@@ -24,17 +24,21 @@ dataset = SubcubeDataset(
 
 
 
+cm = plt.cm.get_cmap('RdYlBu')
 
 
-'''
 for i in range(len(dataset)):
     print(len(dataset)-i)
     point = model.encode(torch.from_numpy(dataset
         [i]['data']))[0].detach().numpy()
-    plt.scatter(
+    sc = plt.scatter(
         point[0],
-        point[1]
+        point[1],
+        c=i,
+        cmap=cm
     )
-    plt.pause(0.05)
-plt.show()
-'''
+    
+    # plt.pause(0.05)
+plt.colorbar(sc)
+plt.savefig('./Scatter_plot', format='png')
+
