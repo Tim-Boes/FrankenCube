@@ -121,8 +121,9 @@ for epoch in range(n_epochs):
 
 coordinates = []
 losses = []
+# dataset.__len__()
+for i in range(0, 50):
 
-for i in range(dataset.__len__(), 50):
     spectrum = torch.unsqueeze(torch.tensor(dataset.__getitem__(i)["data"]), 0)
     # collect metadata of the dataset
     # metadata = dataset.__getitem__(i)["metadata"]
