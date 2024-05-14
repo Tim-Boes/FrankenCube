@@ -4,6 +4,7 @@ import copy
 
 # import matplotlib stuff
 from matplotlib import pyplot
+from matplotlib.colors import LogNorm
 
 # torch stuff
 import torch
@@ -35,7 +36,7 @@ batch_size = 32
 learning_rate = 0.001
 
 dataset = SubcubeDataset(
-    data_directories=["/home/tboes/Dokumente/DATA/prp_files"],
+    data_directories=["/media/ace/Warehouse/prp_files"],
     extension=".hdf5",
     sc_side_length=16,
     stride=16,
@@ -61,7 +62,7 @@ def get_device():
 print(torch.backends.cudnn.version())
 
 model = ConvolutionalAutoencoder.load_from_checkpoint(
-    "/home/tboes/Dokumente/CODE/TIM_REPO/FrankenCube/frankencube/hjkqedpq/checkpoints/epoch=8-step=147456.ckpt"
+    "/home/ace/Documents/CODE/TIM_REPO/FrankenCube/frankencube/hjkqedpq/checkpoints/epoch=8-step=147456.ckpt"
 )
 device = get_device()
 print(device)
@@ -108,7 +109,7 @@ for epoch in range(n_epochs):
         train_loss += loss.item() * batch_size
         progress_bar.set_postfix(loss=str(train_loss))
 
-        if timer == 50:
+        if timer == 1000:
             break
         else:
             continue
@@ -122,7 +123,7 @@ for epoch in range(n_epochs):
 coordinates = []
 losses = []
 # dataset.__len__()
-for i in range(0, 50):
+for i in range(0, 1000):
 
     spectrum = torch.unsqueeze(torch.tensor(dataset.__getitem__(i)["data"]), 0)
     # collect metadata of the dataset
@@ -133,7 +134,8 @@ for i in range(0, 50):
     optimizer.zero_grad()
 
     # encode that stuff
-    output = model(spectrumtf)[1].cpu().detach().numpy().flatten()
+    output = model(spectrumtf)[1].cpu().detach().numpy()
+    # .flatten()
     # coords = model.encode(spectrumtf)
     coords = model(spectrumtf)[0]
     coordinates.append(coords.cpu().detach().numpy())
@@ -150,10 +152,24 @@ pyplot.scatter(coordinates[:, 0], coordinates[:, 1], c=losses)
 pyplot.colorbar()
 
 fig2 = pyplot.figure(2)
-pyplot.plot(output)
+pyplot.imshow(
+    numpy.sum(output[0][0], axis=0),
+    origin='lower',
+    norm=LogNorm(),
+    cmap='gist_heat_r'
+)
+pyplot.colorbar()
 
 fig3 = pyplot.figure(3)
-pyplot.plot(dataset.__getitem__(0)["data"])
+gs = fig3.add_gridspec(1, 2, wspace=0)
+axs = gs.subplots(sharex=True, sharey=True)
+fig3.suptitle('Comparision of the Subcubes')
+axs[0].imshow(
+    numpy.sum(dataset.__getitem__(0)["data"][0], axis=0),
+    origin='lower',
+    norm=LogNorm(),
+    cmap='gist_heat_r'
+)
 
 
 def mouse_move(event):
@@ -167,11 +183,16 @@ def mouse_move(event):
             .cpu()
             .detach()
             .numpy()
-            .flatten()
+            # .flatten()
         )
         pyplot.figure(2)
         pyplot.cla()
-        pyplot.plot(output)
+        pyplot.imshow(
+            numpy.sum(output[0][0], axis=0),
+            origin='lower',
+            norm=LogNorm(),
+            cmap='gist_heat_r'
+        )
         fig2.canvas.draw()
 
 
@@ -188,11 +209,23 @@ def onclick(event):
             device, dtype=torch.float
         )
         optimizer.zero_grad()
-        reconstruction = model(spectrumtf).cpu().detach().numpy().flatten()
+        reconstruction = model(spectrumtf)[1].cpu().detach().numpy()
+        # .flatten()
 
-        pyplot.plot(spectrum, c="b", label="original", lw=0.4)
-        pyplot.plot(reconstruction, c="r", label="reconstruction", lw=0.4)
-        pyplot.legend()
+        # pyplot.plot(numpy.sum(spectrum[0], axis=0), c="b", label="original", lw=0.4)
+        # pyplot.plot(reconstruction, c="r", label="reconstruction", lw=0.4)
+        axs[0].imshow(
+            numpy.sum(spectrum[0], axis=0),
+            origin='lower',
+            norm=LogNorm(),
+            cmap='gist_heat_r'
+        )
+        axs[1].imshow(
+            numpy.sum(reconstruction[0][0], axis=0),
+            origin='lower',
+            norm=LogNorm(),
+            cmap='gist_heat_r'
+        )
         pyplot.title("object #:" + str(index))
         # pyplot.ylim(-3,3)
         fig3.canvas.draw()
