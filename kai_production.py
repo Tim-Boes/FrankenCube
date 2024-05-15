@@ -98,7 +98,6 @@ class interactive_subcube_plot():
             progress_bar.set_description("Epoch " + str(epoch))
 
             train_loss = 0
-            timer = 0
             for item in progress_bar:
                 # get the data here
                 spectrum = item['data']
@@ -122,8 +121,7 @@ class interactive_subcube_plot():
 
         coordinates = []
         losses = []
-        for i in range(self.dataset.__len__()):
-
+        for i in tqdm(range(self.dataset.__len__())):
             spectrum = torch.unsqueeze(torch.tensor(self.dataset.__getitem__(i)["data"]), 0)
             # collect metadata of the dataset
             # metadata = dataset.__getitem__(i)["metadata"]
@@ -144,8 +142,9 @@ class interactive_subcube_plot():
         losses = numpy.array(losses).flatten()
 
         if save is True:
-            numpy.save('./coordinates', arr=coordinates)
-            numpy.save('./losses', arr=losses)
+            print('We save now? - We save NOW!')
+            numpy.save('coordinates', arr=numpy.array(coordinates))
+            numpy.save('losses', arr=numpy.array(losses))
 
         return coordinates, losses
 
@@ -248,11 +247,11 @@ class interactive_subcube_plot():
 if __name__ == "__main__":
 
     autoencoder_model = ConvolutionalAutoencoder.load_from_checkpoint(
-        "/home/ace/Documents/CODING/TIM_REPO/FrankenCube/frankencube/hjkqedpq/checkpoints/epoch=8-step=147456.ckpt"
+        "/root/FrankenCube/frankencube/hjkqedpq/checkpoints/epoch=8-step=147456.ckpt"
     )
 
     subcubedataset = SubcubeDataset(
-        data_directories=["/home/ace/Documents/CODING/DATA/prp_files"],
+        data_directories=["/root/prp_files"],
         extension=".hdf5",
         sc_side_length=16,
         stride=16,
@@ -262,9 +261,9 @@ if __name__ == "__main__":
     ISP = interactive_subcube_plot(
         model=autoencoder_model,
         dataset=subcubedataset,
-        n_epochs=2,
+        n_epochs=1,
         batch_size_=32,
         learning_rate=0.001
     )
 
-    coordinates, losses = ISP.scatter_plot_generator(True)
+    coordinates, losses = ISP.scatter_plot_generator(save=True)
