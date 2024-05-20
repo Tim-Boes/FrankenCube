@@ -6,7 +6,7 @@
     "configurations": [
         {
             "name": "FrankenCube",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "kai_production.py",
             "console": "integratedTerminal",
