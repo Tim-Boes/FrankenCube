@@ -19,6 +19,7 @@ data:
     num_workers: 1
     shuffle: True
     flip: 0.5
+    crop_size: 16
 
 optimizer:
   class_path: torch.optim.Adam

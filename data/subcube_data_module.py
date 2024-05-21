@@ -23,7 +23,8 @@ class SubcubeDataModule(L.LightningDataModule):
         batch_size: int = 32,
         num_workers: int = 8,
         shuffle: bool = True,
-        flip: float = 0.5
+        flip: float = 0.5,
+        crop_size: int = 16
     ):
         """Inititalize the data loader for the Spitzer data.
 
@@ -58,7 +59,7 @@ class SubcubeDataModule(L.LightningDataModule):
         # Note: here I use a given sc side length
         self.transformation_train = transforms.Compose([
             SubcubeRotation(flip=flip),
-            SubcubeCrop(16)
+            SubcubeCrop(crop_size=crop_size)
         ])
 
         self.data_train = None
