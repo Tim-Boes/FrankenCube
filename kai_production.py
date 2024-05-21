@@ -298,16 +298,16 @@ class InteractiveSubcubePlot:
 if __name__ == "__main__":
 
     subcubedataset = SubcubeDataset(
-        data_directories=["/home/tboes/Dokumente/DATA/prp_files"],
+        data_directories=["/root/prp_files"],
         extension=".hdf5",
-        sc_side_length=256,
-        stride=256,
+        sc_side_length=16,
+        stride=16,
         physical_paramters=["dens", "temp"],
     )
 
     ISP = InteractiveSubcubePlot(
-        model_path="/home/tboes/Dokumente/CODE/TIM_REPO/FrankenCube"
-        "/frankencube/hjkqedpq/checkpoints/epoch=8-step=147456.ckpt",
+        model_path="/root/FrankenCube"
+        "/frankencube/unpuwe3k/checkpoints/epoch=10-step=180224.ckpt",
         dataset=subcubedataset,
         n_epochs=1,
         batch_size_=32,
@@ -315,13 +315,14 @@ if __name__ == "__main__":
     )
 
     # ISP.training_model(best_model=False)
-    # ISP.generate_coordinates(save=False)
+    ISP.generate_coordinates(save=True)
 
+"""
     for i in range(100):
         inda = numpy.random.randint(len(subcubedataset))
         pyplot.imshow(numpy.sum(subcubedataset[inda]['data'][0], axis=0), norm=LogNorm())
         pyplot.show()
-
+"""
 """
     ISP.backend_plots(
         coordinates=numpy.load(
