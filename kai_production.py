@@ -1,6 +1,7 @@
 """this module should generate a nice visualization for the FrankenCube model
 """
 # standard stuff
+import os
 import copy
 import numpy
 
@@ -50,6 +51,7 @@ class InteractiveSubcubePlot:
             _type_: _description_
         """
 
+        self.model_path = model_path
         self.dataset = dataset
         self.n_epochs = n_epochs
         self.batch_size = batch_size_
@@ -71,7 +73,7 @@ class InteractiveSubcubePlot:
             self.device = "cpu"
 
         self.model = ConvolutionalAutoencoder.load_from_checkpoint(
-            checkpoint_path=model_path
+            checkpoint_path=self.model_path
         )
 
         self.optimizer = torch.optim.Adam(
@@ -166,9 +168,10 @@ class InteractiveSubcubePlot:
         losses = numpy.array(losses).flatten()
 
         if save is True:
-            print("We save now? - We save NOW!")
-            numpy.save("coordinates", arr=numpy.array(coordinates))
-            numpy.save("losses", arr=numpy.array(losses))
+            print("Coordinates and losses saved.")
+            head, tail = os.path.split(self.model_path)
+            numpy.save(head + "coordinates", arr=numpy.array(coordinates))
+            numpy.save(head + "losses", arr=numpy.array(losses))
 
         return coordinates, losses
 
@@ -298,7 +301,7 @@ class InteractiveSubcubePlot:
 if __name__ == "__main__":
 
     subcubedataset = SubcubeDataset(
-        data_directories=["/root/prp_files"],
+        data_directories=["/media/ace/Warehouse/prp_files"],
         extension=".hdf5",
         sc_side_length=16,
         stride=16,
@@ -306,7 +309,7 @@ if __name__ == "__main__":
     )
 
     ISP = InteractiveSubcubePlot(
-        model_path="/root/FrankenCube"
+        model_path="/home/ace/Documents/CODE/TIM_REPO/FrankenCube/"
         "/frankencube/unpuwe3k/checkpoints/epoch=10-step=180224.ckpt",
         dataset=subcubedataset,
         n_epochs=1,
@@ -315,21 +318,13 @@ if __name__ == "__main__":
     )
 
     # ISP.training_model(best_model=False)
-    ISP.generate_coordinates(save=True)
+    # ISP.generate_coordinates(save=True)
 
-"""
-    for i in range(100):
-        inda = numpy.random.randint(len(subcubedataset))
-        pyplot.imshow(numpy.sum(subcubedataset[inda]['data'][0], axis=0), norm=LogNorm())
-        pyplot.show()
-"""
-"""
     ISP.backend_plots(
         coordinates=numpy.load(
-            "/home/tboes/Dokumente/CODE/TIM_REPO/FrankenCube/coordinates.npy"
+            "/home/ace/Documents/CODE/TIM_REPO/FrankenCube/coordinates.npy"
         ),
         losses=numpy.load(
-            "/home/tboes/Dokumente/CODE/TIM_REPO/FrankenCube/losses.npy"
+            "/home/ace/Documents/CODE/TIM_REPO/FrankenCube/losses.npy"
         ),
     )
-"""
