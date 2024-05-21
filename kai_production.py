@@ -303,8 +303,8 @@ if __name__ == "__main__":
     subcubedataset = SubcubeDataset(
         data_directories=["/media/ace/Warehouse/prp_files"],
         extension=".hdf5",
-        sc_side_length=16,
-        stride=16,
+        sc_side_length=32,
+        stride=32,
         physical_paramters=["dens", "temp"],
     )
 
@@ -317,14 +317,18 @@ if __name__ == "__main__":
         learning_rate=0.001,
     )
 
+    print(len(subcubedataset))
+
     # ISP.training_model(best_model=False)
     # ISP.generate_coordinates(save=True)
 
     ISP.backend_plots(
         coordinates=numpy.load(
-            "/home/ace/Documents/CODE/TIM_REPO/FrankenCube/coordinates.npy"
+            "/home/ace/Documents/CODE/TIM_REPO/FrankenCube/"
+            "/frankencube/unpuwe3k/checkpoints/coordinates.npy"
         ),
         losses=numpy.load(
-            "/home/ace/Documents/CODE/TIM_REPO/FrankenCube/losses.npy"
+            "/home/ace/Documents/CODE/TIM_REPO/FrankenCube/"
+            "/frankencube/unpuwe3k/checkpoints/losses.npy"
         ),
     )
