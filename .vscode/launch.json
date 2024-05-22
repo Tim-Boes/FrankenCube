@@ -8,7 +8,8 @@
             "name": "FrankenCube",
             "type": "debugpy",
             "request": "launch",
-            "program": "kai_production.py",
+            "program": "frankencube.py",
+            "args": "fit --config ./setup/subcube.yaml",
             "console": "integratedTerminal",
             "justMyCode": true
         }
