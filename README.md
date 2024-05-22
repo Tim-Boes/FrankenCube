@@ -51,7 +51,7 @@ Sometimes a "normal" installation of ``PyTorch`` is not possible on a server and
 After installing the prerequisites we need to pick a [NGC Container](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/pytorch) version and install everything with
 
 ```bash
-docker run --gpus all -it nvcr.io/nvidia/pytorch:24.03-py3
+docker run --gpus all -it --shm-size=4gb --name FrankenCube nvcr.io/nvidia/pytorch:24.03-py3
 ```
 
 ### Quick Updates
@@ -79,28 +79,22 @@ For further informations please refer to the [Documentation]() and the [Author](
 
 Docker Cheat sheet
 
-List the previous containers
+List all containers
 
 ```bash
 docker ps -a
 ```
 
-attach to a docker container
+attach to a running docker container
 
 ```bash
-docker attach <container name>
+docker attach <container image>
 ```
 
-start an interactive container
+start a container
 
 ```bash
-docker run -it <container name>
-```
-
-start detached container
-
-```bash
-docker run -d <container name>
+docker run [OPTIONS] <container image>
 ```
 
 rename container
@@ -109,14 +103,33 @@ rename container
 docker rename <old name> <new name>
 ```
 
-build a docker container
-
-```bash
-docker build ???
-```
-
 save changes into new container
 
 ```bash
 docker commit <containerID> <repository>:<tag>
+```
+
+## Setup Github connection
+
+First create a key pair for the Github Repo
+
+```bash
+ssh-keygen -t ed25519
+```
+
+The public key then gets attached to the Github under the settings
+segment of the Repo.
+
+Add the private key to you ssh config file
+
+```bash
+Host FrankenCube
+        Hostname github.com
+        IdentityFile=~/.ssh/<YOUR PUB-KEYFILE>
+```
+
+Then clone the Repo
+
+```bash
+git clone git@FrankenCube:Tim-Boes/FrankenCube.git 
 ```
