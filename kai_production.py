@@ -24,6 +24,7 @@ from sklearn.neighbors import KDTree
 
 # Import The model or the autoencoder
 from models.convolutional_autoencoder import ConvolutionalAutoencoder
+from models.convolutional_autoencoder_high_res import ConvolutionalAutoencoderHighRes
 from data.hdf5_subcube_dataset import SubcubeDataset
 
 
@@ -72,7 +73,7 @@ class InteractiveSubcubePlot:
         else:
             self.device = "cpu"
 
-        self.model = ConvolutionalAutoencoder.load_from_checkpoint(
+        self.model = ConvolutionalAutoencoderHighRes.load_from_checkpoint(
             checkpoint_path=self.model_path
         )
 
@@ -301,16 +302,16 @@ class InteractiveSubcubePlot:
 if __name__ == "__main__":
 
     subcubedataset = SubcubeDataset(
-        data_directories=["/media/ace/Warehouse/prp_files"],
+        data_directories=["/root/prp_files"],
         extension=".hdf5",
-        sc_side_length=32,
-        stride=32,
+        sc_side_length=128,
+        stride=128,
         physical_paramters=["dens", "temp"],
     )
 
     ISP = InteractiveSubcubePlot(
-        model_path="/home/ace/Documents/CODE/TIM_REPO/FrankenCube/"
-        "/frankencube/unpuwe3k/checkpoints/epoch=10-step=180224.ckpt",
+        model_path="/root/FrankenCube"
+        "/frankencube/p8kxg08n/checkpoints/epoch=6-step=1477.ckpt",
         dataset=subcubedataset,
         n_epochs=1,
         batch_size_=32,
@@ -320,8 +321,9 @@ if __name__ == "__main__":
     print(len(subcubedataset))
 
     # ISP.training_model(best_model=False)
-    # ISP.generate_coordinates(save=True)
+    ISP.generate_coordinates(save=True)
 
+'''
     ISP.backend_plots(
         coordinates=numpy.load(
             "/home/ace/Documents/CODE/TIM_REPO/FrankenCube/"
@@ -332,3 +334,4 @@ if __name__ == "__main__":
             "/frankencube/unpuwe3k/checkpoints/losses.npy"
         ),
     )
+'''
