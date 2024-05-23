@@ -304,16 +304,16 @@ if __name__ == "__main__":
     subcubedataset = SubcubeDataset(
         data_directories=["/root/prp_files"],
         extension=".hdf5",
-        sc_side_length=128,
-        stride=128,
+        sc_side_length=32,
+        stride=32,
         physical_paramters=["dens", "temp"],
     )
 
     ISP = InteractiveSubcubePlot(
-        model_path="/root/FrankenCube"
-        "/frankencube/p8kxg08n/checkpoints/epoch=6-step=1477.ckpt",
+        model_path="/root/FrankenCube/"
+            "frankencube/039vubom/checkpoints/epoch=9-step=156280.ckpt",
         dataset=subcubedataset,
-        n_epochs=1,
+        n_epochs=8,
         batch_size_=32,
         learning_rate=0.001,
     )

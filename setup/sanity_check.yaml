@@ -11,15 +11,15 @@ data:
   init_args:
     data_directories: ["/root/prp_files"]
     extension: '.hdf5'
-    sc_side_length: 256
-    stride: 128
+    sc_side_length: 64
+    stride: 32
     indexing: SliceCubeIndex
     physical_parameters: ['dens','temp']
     batch_size: 32
-    num_workers: 1
+    num_workers: 20
     shuffle: True
     flip: 0.5
-    crop_size: 128
+    crop_size: 32
 
 optimizer:
   class_path: torch.optim.Adam
@@ -38,7 +38,7 @@ lr_scheduler:
     verbose: True
 
 trainer:
-  max_epochs: -1
+  max_epochs: 10
   accelerator: gpu
   logger:
     class_path: lightning.pytorch.loggers.WandbLogger
