@@ -89,7 +89,7 @@ class ConvolutionalAutoencoderHighRes(L.LightningModule):
             kernel_size=(4, 4, 4), stride=2, padding=1)  # 4x32x32x32
         self.deconv5 = nn.ConvTranspose3d(
             in_channels=4, out_channels=2,
-            kernel_size=(4, 4, 4), stride=2, padding=1)  # 2x32x32x32
+            kernel_size=(3, 3, 3), stride=1, padding=1)  # 2x32x32x32
         '''
         self.deconv6 = nn.ConvTranspose3d(
             in_channels=4, out_channels=2,
