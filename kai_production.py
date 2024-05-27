@@ -310,7 +310,7 @@ if __name__ == "__main__":
     )
 
     ISP = InteractiveSubcubePlot(
-        model_path="/root/FrankenCube/frankencube/kd8da8vu/checkpoints/epoch=9-step=156280.ckpt",
+        model_path="/root/FrankenCube/frankencube/u8hhgkkk/checkpoints/epoch=4-step=78140.ckpt",
         dataset=subcubedataset,
         n_epochs=8,
         batch_size_=32,
