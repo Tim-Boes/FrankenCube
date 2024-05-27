@@ -95,8 +95,8 @@ def create_and_fill(
 
 
 if __name__ == "__main__":
-    PATH = "/root"
-    DESPATH = "/root/prp_files"
+    PATH = "/media/ace/Warehouse"
+    DESPATH = "/media/ace/Warehouse/prp_files"
     PHYSICALPROP = ["dens", "temp"]
     tabs0 = time()
     create_and_fill(

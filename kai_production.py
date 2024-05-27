@@ -171,8 +171,8 @@ class InteractiveSubcubePlot:
         if save is True:
             print("Coordinates and losses saved.")
             head, tail = os.path.split(self.model_path)
-            numpy.save(head + "coordinates", arr=numpy.array(coordinates))
-            numpy.save(head + "losses", arr=numpy.array(losses))
+            numpy.save(head + "/coordinates", arr=numpy.array(coordinates))
+            numpy.save(head + "/losses", arr=numpy.array(losses))
 
         return coordinates, losses
 
@@ -302,7 +302,7 @@ class InteractiveSubcubePlot:
 if __name__ == "__main__":
 
     subcubedataset = SubcubeDataset(
-        data_directories=["/root/prp_files"],
+        data_directories=["/media/ace/Warehouse/prp_files"],
         extension=".hdf5",
         sc_side_length=32,
         stride=32,
@@ -310,8 +310,8 @@ if __name__ == "__main__":
     )
 
     ISP = InteractiveSubcubePlot(
-        model_path="/root/FrankenCube/"
-            "frankencube/32153ziq/checkpoints/epoch=9-step=156280.ckpt",
+        model_path="/home/ace/Documents/CODE/TIM-REPO/FrankenCube"
+            "/frankencube/tutpsfin/checkpoints/epoch=10-step=20482.ckpt",
         dataset=subcubedataset,
         n_epochs=8,
         batch_size_=32,
@@ -321,17 +321,14 @@ if __name__ == "__main__":
     print(len(subcubedataset))
 
     # ISP.training_model(best_model=False)
-    ISP.generate_coordinates(save=True)
+    # ISP.generate_coordinates(save=False)
 
-'''
     ISP.backend_plots(
         coordinates=numpy.load(
-            "/home/ace/Documents/CODE/TIM_REPO/FrankenCube/"
-            "/frankencube/unpuwe3k/checkpoints/coordinates.npy"
+            "/home/ace/Documents/CODE/TIM-REPO/FrankenCube/frankencube/tutpsfin/coordinates.npy"
         ),
         losses=numpy.load(
-            "/home/ace/Documents/CODE/TIM_REPO/FrankenCube/"
-            "/frankencube/unpuwe3k/checkpoints/losses.npy"
+            "/home/ace/Documents/CODE/TIM-REPO/FrankenCube/frankencube/tutpsfin/losses.npy"
         ),
     )
-'''
+
