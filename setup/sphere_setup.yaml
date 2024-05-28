@@ -11,15 +11,15 @@ data:
   init_args:
     data_directories: ["/root/prp_files"]
     extension: '.hdf5'
-    sc_side_length: 64
-    stride: 32
+    sc_side_length: 32
+    stride: 8
     indexing: SliceCubeIndex
     physical_parameters: ['dens','temp']
     batch_size: 32
     num_workers: 20
     shuffle: True
     flip: 0.5
-    crop_size: 32
+    crop_size: 16
 
 optimizer:
   class_path: torch.optim.Adam
