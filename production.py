@@ -301,8 +301,12 @@ class InteractiveSubcubePlot:
 
 if __name__ == "__main__":
 
+    MODEL_PATH = '/home/tboes/Dokumente/CODE/TIM_REPO/FrankenCube/frankencube/4ma4ifbq/checkpoints/epoch=75-step=8056.ckpt'
+
+    CKP_PATH, EPOCH = os.path.split(MODEL_PATH)
+
     subcubedataset = SubcubeDataset(
-        data_directories=["/root/prp_files"],
+        data_directories=["/home/tboes/Dokumente/DATA/prp_files"],
         extension=".hdf5",
         sc_side_length=32,
         stride=32,
@@ -310,7 +314,7 @@ if __name__ == "__main__":
     )
 
     ISP = InteractiveSubcubePlot(
-        model_path="/root/FrankenCube/frankencube/4ma4ifbq/checkpoints/epoch=75-step=8056.ckpt",
+        model_path="/home/tboes/Dokumente/CODE/TIM_REPO/FrankenCube/frankencube/4ma4ifbq/checkpoints/epoch=75-step=8056.ckpt",
         dataset=subcubedataset,
         n_epochs=8,
         batch_size_=32,
@@ -320,15 +324,15 @@ if __name__ == "__main__":
     print(len(subcubedataset))
 
     # ISP.training_model(best_model=False)
-    ISP.generate_coordinates(save=True)
+    # ISP.generate_coordinates(save=True)
 
-'''
+
     ISP.backend_plots(
         coordinates=numpy.load(
-            "/home/tboes/Dokumente/CODE/TIM_REPO/FrankenCube/frankencube/u8hhgkkk/checkpoints/coordinates.npy"
+            CKP_PATH + '/coordinates.npy'
         ),
         losses=numpy.load(
-            "/home/tboes/Dokumente/CODE/TIM_REPO/FrankenCube/frankencube/u8hhgkkk/checkpoints/losses.npy"
+            CKP_PATH + '/losses.npy'
         ),
     )
-'''
+
