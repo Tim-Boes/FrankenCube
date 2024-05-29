@@ -12,7 +12,7 @@ data:
     data_directories: ["/root/prp_files"]
     extension: '.hdf5'
     sc_side_length: 32
-    stride: 8
+    stride: 4
     indexing: SliceCubeIndex
     physical_parameters: ['dens','temp']
     batch_size: 32

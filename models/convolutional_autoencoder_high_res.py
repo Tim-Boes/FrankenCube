@@ -29,26 +29,17 @@ class ConvolutionalAutoencoderHighRes(L.LightningModule):
 
         # to find the output use:
         # N = (input + 2 * padding - kernel) * (1/stride) + 1
-        # input subcube 2x32x32x32
-        '''
-        self.conv0 = nn.Conv3d(
-            in_channels=2, out_channels=2,
-            kernel_size=(3, 3, 3), stride=1, padding=1)  # 2x128x128x128
-        self.pool0 = nn.MaxPool3d(
-            kernel_size=(2, 2, 2), stride=2, padding=0)  # 2x64x64x64
-        self.conv1 = nn.Conv3d(
-            in_channels=2, out_channels=4,
-            kernel_size=(3, 3, 3), stride=1, padding=1)  # 4x64x64x64
-        self.pool1 = nn.MaxPool3d(
-            kernel_size=(2, 2, 2), stride=2, padding=0)  # 4x32x32x32
+        # input subcube 2x16x16x16
+
         '''
         self.conv2 = nn.Conv3d(
             in_channels=2, out_channels=8,
             kernel_size=(3, 3, 3), stride=1, padding=1)  # 8x32x32x32
         self.pool2 = nn.MaxPool3d(
             kernel_size=(2, 2, 2), stride=2, padding=0)  # 8x16x16x16
+        '''
         self.conv3 = nn.Conv3d(
-            in_channels=8, out_channels=16,
+            in_channels=2, out_channels=16,
             kernel_size=(3, 3, 3), stride=1, padding=1)  # 16x16x16x16
         self.pool3 = nn.MaxPool3d(
             kernel_size=(2, 2, 2), stride=2, padding=0)  # 16x8x8x8
@@ -82,8 +73,9 @@ class ConvolutionalAutoencoderHighRes(L.LightningModule):
             in_channels=32, out_channels=16,
             kernel_size=(4, 4, 4), stride=2, padding=1)  # 16x8x8x8
         self.deconv3 = nn.ConvTranspose3d(
-            in_channels=16, out_channels=8,
-            kernel_size=(4, 4, 4), stride=2, padding=1)  # 8x16x16x16
+            in_channels=16, out_channels=2,
+            kernel_size=(4, 4, 4), stride=2, padding=1)  # 2x16x16x16
+        '''
         self.deconv4 = nn.ConvTranspose3d(
             in_channels=8, out_channels=4,
             kernel_size=(4, 4, 4), stride=2, padding=1)  # 4x32x32x32
@@ -91,24 +83,12 @@ class ConvolutionalAutoencoderHighRes(L.LightningModule):
             in_channels=4, out_channels=2,
             kernel_size=(3, 3, 3), stride=1, padding=1)  # 2x32x32x32
         '''
-        self.deconv6 = nn.ConvTranspose3d(
-            in_channels=4, out_channels=2,
-            kernel_size=(4, 4, 4), stride=2, padding=1)  # 2x64x64x64
-        self.deconv7 = nn.ConvTranspose3d(
-            in_channels=2, out_channels=2,
-            kernel_size=(4, 4, 4), stride=2, padding=1)  # 2x128x128x128
-        '''
-
 
     def encode(self, x):
         """Encode into tensor
         """
-        # x = F.relu(self.conv0(x))
-        # x = self.pool0(x)
-        # x = F.relu(self.conv1(x))
-        # x = self.pool1(x)
-        x = F.relu(self.conv2(x))
-        x = self.pool2(x)
+        # x = F.relu(self.conv2(x))
+        # x = self.pool2(x)
         x = F.relu(self.conv3(x))
         x = self.pool3(x)
         x = F.relu(self.conv4(x))
@@ -128,11 +108,7 @@ class ConvolutionalAutoencoderHighRes(L.LightningModule):
         x = x.view(-1, 64, 2, 2, 2)
         x = F.relu(self.deconv1(x))
         x = F.relu(self.deconv2(x))
-        x = F.relu(self.deconv3(x))
-        x = F.relu(self.deconv4(x))
-        # x = F.relu(self.deconv5(x))
-        # x = F.relu(self.deconv6(x))
-        x = self.deconv5(x)
+        x = self.deconv3(x)
         return x
 
     def forward(self, x):
