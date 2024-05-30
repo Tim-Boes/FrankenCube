@@ -1,7 +1,9 @@
 from .convolutional_autoencoder import ConvolutionalAutoencoder
-from .convolutional_autoencoder_high_res import ConvolutionalAutoencoderHighRes
+from .convolutional_autoencoder import ConvolutionalAutoencoderSC32 
+from .convolutional_autoencoder import ConvolutionalAutoencoderSC64
 
 __all__ = [
     "ConvolutionalAutoencoder",
-    "ConvolutionalAutoencoderHighRes"
+    "ConvolutionalAutoencoderSC32",
+    "ConvolutionalAutoencoderSC64"
 ]

@@ -1,7 +1,7 @@
 seed_everything: 45
 
 model:
-  class_path: models.ConvolutionalAutoencoderHighRes
+  class_path: models.ConvolutionalAutoencoderSC32
   init_args:
     bottleneck: 2
     # rotations: 36
