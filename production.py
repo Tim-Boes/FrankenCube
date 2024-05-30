@@ -301,15 +301,15 @@ class InteractiveSubcubePlot:
 
 if __name__ == "__main__":
 
-    MODEL_PATH = '/root/FrankenCube/frankencube/jaakcdf6/checkpoints/epoch=13-step=775068.ckpt'
+    MODEL_PATH = '/root/FrankenCube/frankencube/i82yiy8z/checkpoints/epoch=162-step=2547364.ckpt'
 
     CKP_PATH, EPOCH = os.path.split(MODEL_PATH)
 
     subcubedataset = SubcubeDataset(
         data_directories=["/root/prp_files"],
         extension=".hdf5",
-        sc_side_length=16,
-        stride=4,
+        sc_side_length=32,
+        stride=32,
         physical_paramters=["dens", "temp"],
     )
 
