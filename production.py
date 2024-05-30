@@ -207,7 +207,7 @@ class InteractiveSubcubePlot:
         pyplot.imshow(
             numpy.sum(zero_output[0][0], axis=0),
             origin="lower",
-            norm=LogNorm(),
+            # norm=LogNorm(),
             cmap="gist_heat_r",
         )
         pyplot.colorbar()
@@ -220,7 +220,7 @@ class InteractiveSubcubePlot:
         self.axs[0].imshow(
             numpy.sum(self.dataset[0]["data"][0], axis=0),
             origin="lower",
-            norm=LogNorm(),
+            # norm=LogNorm(),
             cmap="gist_heat_r",
         )
 
@@ -256,7 +256,7 @@ class InteractiveSubcubePlot:
             pyplot.imshow(
                 numpy.sum(decoded_output[0][0], axis=0),
                 origin="lower",
-                norm=LogNorm(),
+                # norm=LogNorm(),
                 cmap="gist_heat_r",
             )
             self.fig2.canvas.draw()
@@ -285,13 +285,13 @@ class InteractiveSubcubePlot:
             self.axs[0].imshow(
                 numpy.sum(spectrum[0], axis=0),
                 origin="lower",
-                norm=LogNorm(),
+                # norm=LogNorm(),
                 cmap="gist_heat_r",
             )
             self.axs[1].imshow(
                 numpy.sum(reconstruction[0][0], axis=0),
                 origin="lower",
-                norm=LogNorm(),
+                # norm=LogNorm(),
                 cmap="gist_heat_r",
             )
             pyplot.title("object #:" + str(index))
@@ -301,12 +301,12 @@ class InteractiveSubcubePlot:
 
 if __name__ == "__main__":
 
-    MODEL_PATH = '/root/FrankenCube/frankencube/i82yiy8z/checkpoints/epoch=162-step=2547364.ckpt'
+    MODEL_PATH = '/home/ace/Documents/CODE/TIM_REPO/FrankenCube/frankencube/unpuwe3k/checkpoints/epoch=10-step=180224.ckpt'
 
     CKP_PATH, EPOCH = os.path.split(MODEL_PATH)
 
     subcubedataset = SubcubeDataset(
-        data_directories=["/root/prp_files"],
+        data_directories=["/media/ace/Warehouse/prp_files"],
         extension=".hdf5",
         sc_side_length=32,
         stride=32,
@@ -326,7 +326,7 @@ if __name__ == "__main__":
     # ISP.training_model(best_model=False)
     ISP.generate_coordinates(save=True)
 
-'''
+
     ISP.backend_plots(
         coordinates=numpy.load(
             CKP_PATH + '/coordinates.npy'
@@ -335,4 +335,4 @@ if __name__ == "__main__":
             CKP_PATH + '/losses.npy'
         ),
     )
-'''
+
