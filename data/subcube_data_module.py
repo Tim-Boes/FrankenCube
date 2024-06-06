@@ -90,9 +90,6 @@ class SubcubeDataModule(L.LightningDataModule):
                 shuffle=self.shuffle,
                 num_workers=self.num_workers
             )
-        # if stage == "predict":
-
-        # if stage == "val":
 
     def train_dataloader(self):
         """Gets the data loader for training.
@@ -102,22 +99,3 @@ class SubcubeDataModule(L.LightningDataModule):
                 The dataloader instance to use for training.
         """
         return self.dataloader_train
-
-    """ def val_dataloader(self):
-        Gets the data loader for validation.
-
-        Returns:
-            torch.utils.data.DataLoader:
-                The dataloader instance to use for validation.
-
-        return DataLoader(self.data_val, batch_size=32)
-
-        def predict_dataloader(self):
-        Gets the data loader for prediction.
-
-        Returns:
-            torch.utils.data.DataLoader:
-                The dataloader instance to use for prediction.
-
-        return DataLoader(self.data_predict, batch_size=32)
-    """
