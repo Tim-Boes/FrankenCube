@@ -207,10 +207,10 @@ class InteractiveSubcubePlot:
             .numpy()
         )
         pyplot.imshow(
-            numpy.sum(zero_output[0][0], axis=0),
+            numpy.mean(zero_output[0][0], axis=0),
             origin="lower",
-            norm=Normalize(),
-            cmap="gist_heat_r",
+            norm=Normalize(vmin=1e-20, vmax=1e-15),
+            cmap="gist_heat",
         )
         pyplot.colorbar()
 
@@ -220,10 +220,10 @@ class InteractiveSubcubePlot:
         self.axs = gs.subplots(sharex=True, sharey=True)
         self.fig3.suptitle("Comparision of the Subcubes")
         self.axs[0].imshow(
-            numpy.sum(self.dataset[0]["data"][0], axis=0),
+            numpy.mean(self.dataset[0]["data"][0], axis=0),
             origin="lower",
-            norm=Normalize(),
-            cmap="gist_heat_r",
+            norm=Normalize(vmin=1e-20, vmax=1e-15),
+            cmap="gist_heat",
         )
 
         pyplot.figure(1)
@@ -256,10 +256,10 @@ class InteractiveSubcubePlot:
             pyplot.figure(2)
             pyplot.cla()
             pyplot.imshow(
-                numpy.sum(decoded_output[0][0], axis=0),
+                numpy.mean(decoded_output[0][0], axis=0),
                 origin="lower",
-                norm=Normalize(),
-                cmap="gist_heat_r",
+                norm=Normalize(vmin=1e-20, vmax=1e-15),
+                cmap="gist_heat",
             )
             self.fig2.canvas.draw()
 
@@ -284,17 +284,28 @@ class InteractiveSubcubePlot:
             reconstruction = self.model(spectrumtf)[1].cpu().detach().numpy()
             # .flatten()
 
+            data = numpy.clip(numpy.log10(numpy.mean(spectrum[0], axis=0)) + 24, 0, 5)
+
+            print(numpy.min(data), numpy.max(data))
+
             self.axs[0].imshow(
-                numpy.sum(spectrum[0], axis=0),
+                data,
                 origin="lower",
-                norm=Normalize(),
-                cmap="gist_heat_r",
+                cmap="gist_heat",
+                vmin=0,
+                vmax=5
             )
+            
+            recon = numpy.clip(numpy.log10(numpy.mean(numpy.clip(reconstruction[0][0],0 ,1), axis=0)) + 24, 0, 5)
+            
+            print(numpy.min(recon), numpy.max(recon))
+            
             self.axs[1].imshow(
-                numpy.sum(reconstruction[0][0], axis=0),
+                recon,
                 origin="lower",
-                norm=Normalize(),
-                cmap="gist_heat_r",
+                cmap="gist_heat",
+                vmin=0,
+                vmax=5
             )
             pyplot.title("object #:" + str(index))
             # pyplot.ylim(-3,3)

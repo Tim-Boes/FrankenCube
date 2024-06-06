@@ -4,7 +4,9 @@ model:
   class_path: models.ConvolutionalAutoencoderSC16
   init_args:
     bottleneck: 2
-    # rotations: 36
+    log_offet: 24
+    vmin: 0
+    vmax: 8
 
 data:
   class_path: data.SubcubeDataModule

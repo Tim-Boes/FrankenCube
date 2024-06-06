@@ -129,6 +129,9 @@ class ConvolutionalAutoencoderSC16(L.LightningModule):
     def __init__(
             self,
             bottleneck: int = 2,
+            log_offset: int = 24,
+            vmin: int = 0,
+            vmax: int = 8
             ):
         """Initialize the convolutional autoencoder
 
@@ -139,6 +142,9 @@ class ConvolutionalAutoencoderSC16(L.LightningModule):
 
         super().__init__()
         self.bottleneck = bottleneck
+        self.log_offset = log_offset
+        self.vmin = vmin
+        self.vmax = vmax
 
         # implement simple loss frunction
         # self.loss = nn.MSELoss()
@@ -148,7 +154,7 @@ class ConvolutionalAutoencoderSC16(L.LightningModule):
         # input subcube 2x16x16x16
 
         self.conv0 = nn.Conv3d(
-            in_channels=8, out_channels=16,
+            in_channels=2, out_channels=16,
             kernel_size=(3, 3, 3), stride=1, padding=1)  # 16x16x16x16
         self.pool0 = nn.MaxPool3d(
             kernel_size=(2, 2, 2), stride=2, padding=0)  # 16x8x8x8
@@ -189,6 +195,11 @@ class ConvolutionalAutoencoderSC16(L.LightningModule):
     def encode(self, x):
         """Encode into tensor
         """
+        x = torch.clip(
+            torch.log10(x) + self.log_offset,
+            min=self.vmin,
+            max=self.vmax
+        )
         x = F.relu(self.conv0(x))
         x = self.pool0(x)
         x = F.relu(self.conv1(x))
