@@ -4,7 +4,7 @@ model:
   class_path: models.ConvolutionalAutoencoderSC16
   init_args:
     bottleneck: 2
-    log_offet: 24
+    log_offset: 24
     vmin: 0
     vmax: 8
 
