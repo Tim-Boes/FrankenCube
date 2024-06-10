@@ -95,8 +95,8 @@ def create_and_fill(
 
 
 if __name__ == "__main__":
-    PATH = "/media/ace/Warehouse/"
-    DESPATH = "/media/ace/Warehouse/SPHERE"
+    PATH = "/home/tboes/Dokumente/DATA"
+    DESPATH = "/home/tboes/Dokumente/DATA/prp_files"
     PHYSICALPROP = ["dens", "temp"]
     tabs0 = time()
     create_and_fill(
