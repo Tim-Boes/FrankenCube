@@ -24,9 +24,7 @@ from tqdm import tqdm
 from sklearn.neighbors import KDTree
 
 # Import The model or the autoencoder
-from models.convolutional_autoencoder import ConvolutionalAutoencoder
-from models.convolutional_autoencoder import ConvolutionalAutoencoderSC64
-from models.convolutional_autoencoder import ConvolutionalAutoencoderSC32
+import models.convolutional_autoencoder as mc
 from data.hdf5_subcube_dataset import SubcubeDataset
 
 
@@ -36,7 +34,7 @@ class InteractiveSubcubePlot:
     def __init__(
         self,
         model_path: str,
-        dataset: SubcubeDataset,
+        dataloader: DataLoader,
         n_epochs: int,
         batch_size_: int,
         learning_rate: int,
@@ -55,7 +53,7 @@ class InteractiveSubcubePlot:
         """
 
         self.model_path = model_path
-        self.dataset = dataset
+        self.dataloader = dataloader
         self.n_epochs = n_epochs
         self.batch_size = batch_size_
         self.learning_rate = learning_rate
@@ -75,7 +73,7 @@ class InteractiveSubcubePlot:
         else:
             self.device = "cpu"
 
-        self.model = ConvolutionalAutoencoderSC64.load_from_checkpoint(
+        self.model = mc.ConvolutionalAutoencoderSC16.load_from_checkpoint(
             checkpoint_path=self.model_path
         )
 
@@ -85,12 +83,6 @@ class InteractiveSubcubePlot:
 
     def training_model(self, best_model: bool):
         """Train the model"""
-        dataloader = DataLoader(
-            self.dataset,
-            batch_size=self.batch_size,
-            shuffle=True,
-            num_workers=4
-        )
 
         print(torch.backends.cudnn.version())
 
@@ -108,7 +100,7 @@ class InteractiveSubcubePlot:
         # Iterate over the epchs
         for epoch in range(self.n_epochs):
             # setup a progressbar for the terminal
-            progress_bar = tqdm(dataloader)
+            progress_bar = tqdm(self.dataloader)
             progress_bar.set_description("Epoch " + str(epoch))
 
             train_loss = 0
@@ -143,9 +135,9 @@ class InteractiveSubcubePlot:
         """
         coordinates = []
         losses = []
-        for i in tqdm(range(len(self.dataset))):
+        for item in tqdm(self.dataloader):
             spectrum = torch.unsqueeze(
-                torch.tensor(self.dataset[i]["data"]), 0
+                torch.tensor(item["data"]), 0
             )
             # collect metadata of the dataset
             # metadata = dataset.__getitem__(i)["metadata"]
@@ -156,10 +148,9 @@ class InteractiveSubcubePlot:
 
             # encode that stuff
             self.output = self.model(spectrumtf)[1].cpu().detach().numpy()
-            # .flatten()
-            # coords = model.encode(spectrumtf)
-            coords = self.model(spectrumtf)[0]
-            coordinates.append(coords.cpu().detach().numpy())
+            coords = self.model(spectrumtf)[0].cpu().detach().numpy()
+            coordinates.append(coords)
+
             losses.append(
                 self.loss_function(
                     self.model(spectrumtf)[1],
@@ -314,21 +305,28 @@ class InteractiveSubcubePlot:
 
 if __name__ == "__main__":
 
-    MODEL_PATH = '/home/ace/Documents/CODE/TIM_REPO/FrankenCube/frankencube/r04yvkd4/checkpoints/epoch=10-step=20482.ckpt'
+    MODEL_PATH = '/root/FrankenCube/frankencube/ky6az7cs/checkpoints/epoch=4-step=640120.ckpt'
 
     CKP_PATH, EPOCH = os.path.split(MODEL_PATH)
 
     subcubedataset = SubcubeDataset(
-        data_directories=["/media/ace/Warehouse/DATA/prp_files"],
+        data_directories=["/root/prp_files"],
         extension=".hdf5",
-        sc_side_length=64,
-        stride=32,
+        sc_side_length=16,
+        stride=16,
         physical_paramters=["dens", "temp"],
+    )
+
+    dl = DataLoader(
+            dataset=subcubedataset,
+            batch_size=32,
+            shuffle=False,
+            num_workers=20
     )
 
     ISP = InteractiveSubcubePlot(
         model_path=MODEL_PATH,
-        dataset=subcubedataset,
+        dataloader=dl,
         n_epochs=8,
         batch_size_=32,
         learning_rate=0.001,
@@ -337,9 +335,9 @@ if __name__ == "__main__":
     print(len(subcubedataset))
 
     # ISP.training_model(best_model=False)
-    # ISP.generate_coordinates(save=True)
+    ISP.generate_coordinates(save=True)
 
-
+'''
     ISP.backend_plots(
         coordinates=numpy.load(
             CKP_PATH + '/coordinates.npy'
@@ -348,4 +346,4 @@ if __name__ == "__main__":
             CKP_PATH + '/losses.npy'
         ),
     )
-
+'''
