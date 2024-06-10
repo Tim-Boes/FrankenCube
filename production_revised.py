@@ -90,12 +90,12 @@ class InteractiveSubcubePlot:
         losses = []
         for item in tqdm(self.dataloader):
             data_spectrum = torch.tensor(item["data"]).to(self.device, dtype=torch.float)
-            reconstructed = self.model(data_spectrum)[1].cpu().detach().numpy()
-            encoded = self.model(data_spectrum)[0].cpu().detach().numpy()
+            reconstructed = self.model(data_spectrum)[1]
+            encoded = self.model(data_spectrum)[0]
             loss = torch.mean(torch.mean(torch.square(reconstructed - data_spectrum).flatten(1), dim=1))
 
-            coordinates.append(encoded)
-            losses.append(loss)
+            coordinates.append(encoded.cpu().detach().numpy())
+            losses.append(loss.cpu().detach().numpy())
 
         coordinates = numpy.array(coordinates).reshape(-1, 2)
         losses = numpy.array(losses).flatten()
@@ -232,12 +232,12 @@ class InteractiveSubcubePlot:
 
 if __name__ == "__main__":
 
-    MODEL_PATH = '/home/tboes/Dokumente/CODE/TIM_REPO/FrankenCube/frankencube/ky6az7cs/checkpoints/epoch=4-step=640120.ckpt'
+    MODEL_PATH = '/root/FrankenCube/frankencube/ky6az7cs/checkpoints/epoch=4-step=640120.ckpt'
 
     CKP_PATH, EPOCH = os.path.split(MODEL_PATH)
 
     subcubedataset = SubcubeDataset(
-        data_directories=["/home/tboes/Dokumente/DATA/prp_files"],
+        data_directories=["/root/prp_files"],
         extension=".hdf5",
         sc_side_length=16,
         stride=16,
@@ -253,6 +253,7 @@ if __name__ == "__main__":
 
     ISP = InteractiveSubcubePlot(
         model_path=MODEL_PATH,
+        dataset=subcubedataset,
         dataloader=dl,
         n_epochs=8,
         batch_size_=32,
