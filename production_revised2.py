@@ -63,9 +63,13 @@ class InteractiveSubcubePlot:
         # Some placeholder variables needed for later
         self.output = None
         self.tree = None
-        self.fig2 = None
-        self.fig3 = None
+        self.main_fig = None
+        self.main_ax = None
+        self.fig = None
         self.axs = None
+        self.vmin = None
+        self.vmax = None
+        self.cmap = None
         self.device = None
 
         if torch.cuda.is_available():
@@ -119,45 +123,45 @@ class InteractiveSubcubePlot:
             point losses (numpy array): losses of the scatterpoints
         """
         self.tree = KDTree(coordinates, leaf_size=2)
+        self.cmap = pyplot.colormaps['plasma']
 
-        # Scatter Plot of the Subcubes
-        fig1 = pyplot.figure(1)
-        pyplot.scatter(coordinates[:, 0], coordinates[:, 1], c=losses, s=0.75, alpha=0.75)
-        pyplot.colorbar()
+        self.main_fig, self.main_ax = pyplot.subplots()
 
-        # Plot the decoded Subcubes
-        self.fig2 = pyplot.figure(2)
-        zero_output = (
-            self.model.decode(
-                torch.tensor(
-                    numpy.array([0, 0])
-                ).to(self.device, dtype=torch.float)
-            )
-            .cpu()
-            .detach()
-            .numpy()
+        ind = numpy.argwhere(losses > 100)
+        print(len(ind))
+
+        self.main_ax.scatter(
+            coordinates[ind, 0],
+            coordinates[ind, 1],
+            c=losses[ind],
+            s=10,
+            alpha=0.75,
+            cmap=self.cmap
         )
-        pyplot.imshow(
-            numpy.mean(zero_output[0][0], axis=0),
-            origin="lower",
-            cmap="plasma",
-        )
-        pyplot.colorbar()
+        self.main_ax.set_xlabel('Cells in Y')
+        self.main_ax.set_ylabel('Cells in Z')
 
-        # Plot the comparision
-        self.fig3 = pyplot.figure(3)
-        gs = self.fig3.add_gridspec(1, 2, wspace=0)
-        self.axs = gs.subplots(sharex=True, sharey=True)
-        self.fig3.suptitle("Comparision of the Subcubes")
-        self.axs[0].imshow(
-            numpy.mean(self.dataset[0]["data"][0], axis=0),
-            origin="lower",
-            cmap="plasma",
+        self.main_fig.colorbar(
+            mappable=pyplot.cm.ScalarMappable(
+                norm=Normalize(
+                    numpy.min(losses[ind]),
+                    numpy.max(losses[ind])
+                ),
+                cmap=self.cmap),
+            ax=self.main_ax,
+            label='Loss'
         )
 
-        pyplot.figure(1)
         pyplot.connect("motion_notify_event", self.mouse_move)
-        fig1.canvas.mpl_connect("button_press_event", self.onclick)
+
+        self.fig, self.axs = pyplot.subplot_mosaic(
+            [
+                ['left','right'],
+                ['left', 'right']
+            ]
+        )
+        
+        self.main_fig.canvas.mpl_connect("button_press_event", self.onclick)
 
         pyplot.show()
 
@@ -181,14 +185,14 @@ class InteractiveSubcubePlot:
                 .detach()
                 .numpy()
             )
-            pyplot.figure(2)
-            pyplot.cla()
-            pyplot.imshow(
+
+            self.axs['right'].cla()
+            self.axs['right'].imshow(
                 numpy.mean(decoded_output[0][0], axis=0),
                 origin="lower",
-                cmap="plasma",
+                cmap=self.cmap,
             )
-            self.fig2.canvas.draw()
+            self.fig.canvas.draw()
 
     def onclick(self, event):
         """On mouse click plot the
@@ -198,38 +202,37 @@ class InteractiveSubcubePlot:
         """
         if event.button == 1:
             index = self.tree.query([[event.xdata, event.ydata]], k=1)[1][0][0]
-            pyplot.figure(3)
-            pyplot.cla()
+            self.axs['left'].cla()
             subcube = torch.tensor(
                     self.dataset[index]["data"]
                 ).to(self.device, dtype=torch.float)
 
             reconstruction = self.model(subcube)[1].cpu().detach().numpy()
 
-            data = numpy.clip(numpy.log10(numpy.mean(self.dataset[index]["data"][0], axis=0)) + 24, 0, 5)
+            data = numpy.mean(numpy.clip(numpy.log10(self.dataset[index]["data"][0]) + 24, 0, 8), axis=0)
 
-            self.axs[0].imshow(
+            self.axs['left'].imshow(
                 data,
                 origin="lower",
-                cmap="plasma",
+                cmap=self.cmap,
                 vmin=0,
-                vmax=5
+                vmax=8
             )
 
             # recon = numpy.clip(numpy.log10(numpy.mean(numpy.clip(reconstruction[0][0],0 ,1), axis=0)) + 24, 0, 5)
             recon = numpy.mean(reconstruction[0][0], axis=0)
             # print(numpy.min(recon), numpy.max(recon))
 
-            self.axs[1].imshow(
+            self.axs['right'].imshow(
                 recon,
                 origin="lower",
-                cmap="plasma",
+                cmap=self.cmap,
                 vmin=0,
-                vmax=5
+                vmax=8
             )
-            self.fig3.colorbar()
-            pyplot.title("object #:" + str(index))
-            self.fig3.canvas.draw()
+            
+            self.axs['left'].set_title('Subcube #' + str(index))
+            self.fig.canvas.draw()
 
 
 if __name__ == "__main__":
