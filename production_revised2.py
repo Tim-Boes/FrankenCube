@@ -3,12 +3,12 @@
 # standard stuff
 import os
 import copy
+import matplotlib.figure
 import numpy
 
 # import matplotlib stuff
+import matplotlib
 from matplotlib import pyplot
-from matplotlib.colors import LogNorm
-from matplotlib.colors import Normalize
 
 # torch stuff
 import torch
@@ -61,16 +61,15 @@ class InteractiveSubcubePlot:
         self.learning_rate = learning_rate
 
         # Some placeholder variables needed for later
-        self.output = None
         self.tree = None
-        self.main_fig = None
-        self.main_ax = None
-        self.fig = None
-        self.axs = None
+
         self.vmin = None
         self.vmax = None
-        self.cmap = None
+
         self.device = None
+
+
+
 
         if torch.cuda.is_available():
             self.device = "cuda:0"
@@ -130,7 +129,7 @@ class InteractiveSubcubePlot:
         ind = numpy.argwhere(losses > 100)
         print(len(ind))
 
-        self.main_ax.scatter(
+        self.main_plot = self.main_ax.scatter(
             coordinates[ind, 0],
             coordinates[ind, 1],
             c=losses[ind],
@@ -138,31 +137,56 @@ class InteractiveSubcubePlot:
             alpha=0.75,
             cmap=self.cmap
         )
-        self.main_ax.set_xlabel('Cells in Y')
-        self.main_ax.set_ylabel('Cells in Z')
-
+        self.main_ax.set_xlabel('X')
+        self.main_ax.set_ylabel('Y')
         self.main_fig.colorbar(
-            mappable=pyplot.cm.ScalarMappable(
-                norm=Normalize(
-                    numpy.min(losses[ind]),
-                    numpy.max(losses[ind])
-                ),
-                cmap=self.cmap),
-            ax=self.main_ax,
-            label='Loss'
+            mappable=self.main_plot
         )
 
         pyplot.connect("motion_notify_event", self.mouse_move)
 
-        self.fig, self.axs = pyplot.subplot_mosaic(
-            [
-                ['left','right'],
-                ['left', 'right']
-            ]
+        self.fig1, self.ax1 = pyplot.subplots()
+        self.motion_plot = self.ax1.imshow(
+            numpy.mean(
+                self.dataset[0]['data'][0], axis=0
+            ),
+            cmap=self.cmap,
+            vmin= 0,
+            vmax= 8
         )
+        self.fig1.colorbar(
+            mappable=self.motion_plot
+        )
+
+        self.fig2, self.ax2 = pyplot.subplots(1,2)
+        comp_plot_left = self.ax2[0].imshow(
+            numpy.mean(
+                self.dataset[0]['data'][0], axis=0
+            ),
+            cmap=self.cmap,
+            vmin= 0,
+            vmax= 8
+        )
+        comp_plot_right = self.ax2[1].imshow(
+            numpy.mean(
+                self.dataset[0]['data'][0], axis=0
+            ),
+            cmap=self.cmap,
+            vmin= 0,
+            vmax= 8
+        )
+        self.fig2.colorbar(
+            mappable=comp_plot_left,
+            ax=self.ax2[0]
+        )
+        self.fig2.colorbar(
+            mappable=comp_plot_right,
+            ax=self.ax2[1]
+        )
+
+
         
         self.main_fig.canvas.mpl_connect("button_press_event", self.onclick)
-
         pyplot.show()
 
     def mouse_move(self, event):
@@ -175,24 +199,22 @@ class InteractiveSubcubePlot:
         x = event.xdata
         y = event.ydata
         if x is not None and y is not None:
-            decoded_output = (
-                self.model.decode(
-                    torch.tensor(
-                        numpy.array([x, y])
-                    ).to(self.device, dtype=torch.float)
-                )
-                .cpu()
-                .detach()
-                .numpy()
+            reconstructed_subcube = self.model.decode(
+                torch.tensor(
+                    numpy.array(
+                        [x, y]
+                    )
+                ).to(device=self.device, dtype=torch.float)
+            ).cpu().detach().numpy()
+
+            self.ax1.imshow(
+                numpy.mean(reconstructed_subcube[0][0], axis=0),
+                cmap=self.cmap,
+                vmin= 0,
+                vmax= 8
             )
 
-            self.axs['right'].cla()
-            self.axs['right'].imshow(
-                numpy.mean(decoded_output[0][0], axis=0),
-                origin="lower",
-                cmap=self.cmap,
-            )
-            self.fig.canvas.draw()
+            self.fig1.canvas.draw()
 
     def onclick(self, event):
         """On mouse click plot the
@@ -202,37 +224,30 @@ class InteractiveSubcubePlot:
         """
         if event.button == 1:
             index = self.tree.query([[event.xdata, event.ydata]], k=1)[1][0][0]
-            self.axs['left'].cla()
+            self.ax2[0].cla()
+            self.ax2[1].cla()
             subcube = torch.tensor(
                     self.dataset[index]["data"]
                 ).to(self.device, dtype=torch.float)
 
-            reconstruction = self.model(subcube)[1].cpu().detach().numpy()
+            reconstruction = numpy.mean(self.model(subcube)[1].cpu().detach().numpy()[0][0], axis=0)
 
             data = numpy.mean(numpy.clip(numpy.log10(self.dataset[index]["data"][0]) + 24, 0, 8), axis=0)
 
-            self.axs['left'].imshow(
+            self.ax2[0].imshow(
                 data,
-                origin="lower",
                 cmap=self.cmap,
-                vmin=0,
-                vmax=8
+                vmin= 0,
+                vmax= 8
+            )
+            self.ax2[1].imshow(
+                reconstruction,
+                cmap=self.cmap,
+                vmin= 0,
+                vmax= 8
             )
 
-            # recon = numpy.clip(numpy.log10(numpy.mean(numpy.clip(reconstruction[0][0],0 ,1), axis=0)) + 24, 0, 5)
-            recon = numpy.mean(reconstruction[0][0], axis=0)
-            # print(numpy.min(recon), numpy.max(recon))
-
-            self.axs['right'].imshow(
-                recon,
-                origin="lower",
-                cmap=self.cmap,
-                vmin=0,
-                vmax=8
-            )
-            
-            self.axs['left'].set_title('Subcube #' + str(index))
-            self.fig.canvas.draw()
+            self.fig2.canvas.draw()
 
 
 if __name__ == "__main__":
