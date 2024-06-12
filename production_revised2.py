@@ -254,12 +254,12 @@ class InteractiveSubcubePlot:
 
 if __name__ == "__main__":
 
-    MODEL_PATH = '/home/tboes/Dokumente/CODE/TIM_REPO/FrankenCube/frankencube/arx3rob0/checkpoints/epoch=19-step=312560.ckpt'
+    MODEL_PATH = '/root/FrankenCube/frankencube/7e819kbd/checkpoints/epoch=15-step=250048.ckpt'
 
     CKP_PATH, EPOCH = os.path.split(MODEL_PATH)
 
     subcubedataset = SubcubeDataset(
-        data_directories=['/home/tboes/Dokumente/DATA/prp_files'],
+        data_directories=['/root/prp_files'],
         extension=".hdf5",
         indexing=CoreSliceCubeIndex,
         sc_side_length=16,
@@ -285,9 +285,9 @@ if __name__ == "__main__":
 
     print(len(subcubedataset))
 
-    # ISP.generate_coordinates(save=True)
+    ISP.generate_coordinates(save=True)
 
-
+'''
     ISP.backend_plots(
         coordinates=numpy.load(
             CKP_PATH + '/coordinates.npy'
@@ -296,3 +296,4 @@ if __name__ == "__main__":
             CKP_PATH + '/losses.npy'
         ),
     )
+'''
