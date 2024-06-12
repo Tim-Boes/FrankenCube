@@ -148,11 +148,11 @@ class InteractiveSubcubePlot:
             numpy.mean(
                 numpy.log10(
                     self.dataset[0]['data'][0]
-                ) + 23, axis=0
+                ) + 25, axis=0
             ),
             cmap=self.cmap,
-            vmin=0,
-            vmax=10
+            vmin=-0.0001,
+            vmax=0.0001
         )
         self.fig1.colorbar(
             mappable=self.motion_plot
@@ -163,21 +163,21 @@ class InteractiveSubcubePlot:
             numpy.mean(
                 numpy.log10(
                     self.dataset[0]['data'][0]
-                ) + 23, axis=0
+                ) + 25, axis=0
             ),
             cmap=self.cmap,
             vmin=0,
-            vmax=10
+            vmax=3
         )
         comp_plot_right = self.ax2[1].imshow(
             numpy.mean(
                 numpy.log10(
                     self.dataset[0]['data'][0]
-                ) + 23, axis=0
+                ) + 25, axis=0
             ),
             cmap=self.cmap,
             vmin=0,
-            vmax=10
+            vmax=0.1
         )
         self.fig2.colorbar(
             mappable=comp_plot_left,
@@ -211,6 +211,9 @@ class InteractiveSubcubePlot:
                 ).to(device=self.device, dtype=torch.float)
             ).cpu().detach().numpy()
 
+            print(numpy.max(numpy.mean(reconstructed_subcube[0][0], axis=0)))
+            print(numpy.min(numpy.mean(reconstructed_subcube[0][0], axis=0)))
+
             self.ax1.imshow(
                 numpy.mean(reconstructed_subcube[0][0], axis=0),
                 cmap=self.cmap,
@@ -228,25 +231,27 @@ class InteractiveSubcubePlot:
             index = self.tree.query([[event.xdata, event.ydata]], k=1)[1][0][0]
             self.ax2[0].cla()
             self.ax2[1].cla()
-            subcube = torch.tensor(
-                    self.dataset[index]["data"]
+            subcube = self.dataset[index]['data']
+            subcube_tensor = torch.tensor(
+                    subcube
                 ).to(self.device, dtype=torch.float)
+            enc_output, dec_output = self.model(subcube_tensor)
+            print(enc_output)
+            reconstruction = numpy.mean(dec_output.cpu().detach().numpy()[0][0], axis=0)
 
-            reconstruction = numpy.mean(self.model(subcube)[1].cpu().detach().numpy()[0][0], axis=0)
-
-            data = numpy.mean((numpy.log10(self.dataset[index]["data"][0]) + 23), axis=0)
+            data = numpy.mean((numpy.log10(subcube[0]) + 25), axis=0)
 
             self.ax2[0].imshow(
                 data,
                 cmap=self.cmap,
                 vmin=0,
-                vmax=10
+                vmax=3
             )
             self.ax2[1].imshow(
                 reconstruction,
                 cmap=self.cmap,
-                vim=0,
-                vmax=10
+                vmin=0,
+                vmax=0.1
             )
 
             self.fig2.canvas.draw()
@@ -254,12 +259,12 @@ class InteractiveSubcubePlot:
 
 if __name__ == "__main__":
 
-    MODEL_PATH = '/root/FrankenCube/frankencube/7e819kbd/checkpoints/epoch=15-step=250048.ckpt'
+    MODEL_PATH = '/home/tboes/Dokumente/CODE/TIM_REPO/FrankenCube/frankencube/7e819kbd/checkpoints/epoch=15-step=250048.ckpt'
 
     CKP_PATH, EPOCH = os.path.split(MODEL_PATH)
 
     subcubedataset = SubcubeDataset(
-        data_directories=['/root/prp_files'],
+        data_directories=['/home/tboes/Dokumente/DATA/prp_files'],
         extension=".hdf5",
         indexing=CoreSliceCubeIndex,
         sc_side_length=16,
@@ -285,9 +290,9 @@ if __name__ == "__main__":
 
     print(len(subcubedataset))
 
-    ISP.generate_coordinates(save=True)
+    # ISP.generate_coordinates(save=True)
 
-'''
+
     ISP.backend_plots(
         coordinates=numpy.load(
             CKP_PATH + '/coordinates.npy'
@@ -296,4 +301,4 @@ if __name__ == "__main__":
             CKP_PATH + '/losses.npy'
         ),
     )
-'''
+
