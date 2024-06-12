@@ -127,13 +127,10 @@ class InteractiveSubcubePlot:
 
         self.main_fig, self.main_ax = pyplot.subplots()
 
-        ind = numpy.argwhere(losses > 100)
-        print(len(ind))
-
         self.main_plot = self.main_ax.scatter(
-            coordinates[ind, 0],
-            coordinates[ind, 1],
-            c=losses[ind],
+            coordinates[:, 0],
+            coordinates[:, 1],
+            c=losses[:],
             s=10,
             alpha=0.75,
             cmap=self.cmap
@@ -149,11 +146,13 @@ class InteractiveSubcubePlot:
         self.fig1, self.ax1 = pyplot.subplots()
         self.motion_plot = self.ax1.imshow(
             numpy.mean(
-                self.dataset[0]['data'][0], axis=0
+                numpy.log10(
+                    self.dataset[0]['data'][0]
+                ) + 23, axis=0
             ),
             cmap=self.cmap,
-            vmin= 0,
-            vmax= 8
+            vmin=0,
+            vmax=10
         )
         self.fig1.colorbar(
             mappable=self.motion_plot
@@ -162,19 +161,23 @@ class InteractiveSubcubePlot:
         self.fig2, self.ax2 = pyplot.subplots(1,2)
         comp_plot_left = self.ax2[0].imshow(
             numpy.mean(
-                self.dataset[0]['data'][0], axis=0
+                numpy.log10(
+                    self.dataset[0]['data'][0]
+                ) + 23, axis=0
             ),
             cmap=self.cmap,
-            vmin= 0,
-            vmax= 8
+            vmin=0,
+            vmax=10
         )
         comp_plot_right = self.ax2[1].imshow(
             numpy.mean(
-                self.dataset[0]['data'][0], axis=0
+                numpy.log10(
+                    self.dataset[0]['data'][0]
+                ) + 23, axis=0
             ),
             cmap=self.cmap,
-            vmin= 0,
-            vmax= 8
+            vmin=0,
+            vmax=10
         )
         self.fig2.colorbar(
             mappable=comp_plot_left,
@@ -211,8 +214,6 @@ class InteractiveSubcubePlot:
             self.ax1.imshow(
                 numpy.mean(reconstructed_subcube[0][0], axis=0),
                 cmap=self.cmap,
-                vmin= 0,
-                vmax= 8
             )
 
             self.fig1.canvas.draw()
@@ -233,19 +234,19 @@ class InteractiveSubcubePlot:
 
             reconstruction = numpy.mean(self.model(subcube)[1].cpu().detach().numpy()[0][0], axis=0)
 
-            data = numpy.mean(numpy.clip(numpy.log10(self.dataset[index]["data"][0]) + 24, 0, 8), axis=0)
+            data = numpy.mean((numpy.log10(self.dataset[index]["data"][0]) + 23), axis=0)
 
             self.ax2[0].imshow(
                 data,
                 cmap=self.cmap,
-                vmin= 0,
-                vmax= 8
+                vmin=0,
+                vmax=10
             )
             self.ax2[1].imshow(
                 reconstruction,
                 cmap=self.cmap,
-                vmin= 0,
-                vmax= 8
+                vim=0,
+                vmax=10
             )
 
             self.fig2.canvas.draw()
@@ -253,12 +254,12 @@ class InteractiveSubcubePlot:
 
 if __name__ == "__main__":
 
-    MODEL_PATH = '/root/FrankenCube/frankencube/arx3rob0/checkpoints/epoch=19-step=312560.ckpt'
+    MODEL_PATH = '/home/tboes/Dokumente/CODE/TIM_REPO/FrankenCube/frankencube/arx3rob0/checkpoints/epoch=19-step=312560.ckpt'
 
     CKP_PATH, EPOCH = os.path.split(MODEL_PATH)
 
     subcubedataset = SubcubeDataset(
-        data_directories=['/root/prp_files'],
+        data_directories=['/home/tboes/Dokumente/DATA/prp_files'],
         extension=".hdf5",
         indexing=CoreSliceCubeIndex,
         sc_side_length=16,
@@ -284,9 +285,9 @@ if __name__ == "__main__":
 
     print(len(subcubedataset))
 
-    ISP.generate_coordinates(save=True)
+    # ISP.generate_coordinates(save=True)
 
-'''
+
     ISP.backend_plots(
         coordinates=numpy.load(
             CKP_PATH + '/coordinates.npy'
@@ -295,4 +296,3 @@ if __name__ == "__main__":
             CKP_PATH + '/losses.npy'
         ),
     )
-'''
