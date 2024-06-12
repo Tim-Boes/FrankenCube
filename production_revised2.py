@@ -26,6 +26,7 @@ from sklearn.neighbors import KDTree
 # Import The model or the autoencoder
 import models.convolutional_autoencoder as mc
 from data.hdf5_subcube_dataset import SubcubeDataset
+from data.cube_indexing import CoreSliceCubeIndex
 
 
 class InteractiveSubcubePlot:
@@ -259,6 +260,7 @@ if __name__ == "__main__":
     subcubedataset = SubcubeDataset(
         data_directories=['/media/ace/Warehouse/DATA/prp_files'],
         extension=".hdf5",
+        indexing=CoreSliceCubeIndex,
         sc_side_length=16,
         stride=16,
         physical_paramters=["dens", "temp"],

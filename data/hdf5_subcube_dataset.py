@@ -11,7 +11,7 @@ import os
 import h5py
 import numpy as np
 from torch.utils.data import Dataset
-from .cube_indexing import CubeIndex, SliceCubeIndex
+from .cube_indexing import CubeIndex, SliceCubeIndex, CoreSliceCubeIndex
 
 
 class HDF5Dataset(Dataset):
