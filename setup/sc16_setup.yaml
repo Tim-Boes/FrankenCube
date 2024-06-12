@@ -16,7 +16,7 @@ data:
     sc_side_length: 32
     stride: 16
     indexing: CoreSliceCubeIndex
-    physical_parameters: ['dens','temp']
+    physical_parameters: ['dens']
     batch_size: 32
     num_workers: 20
     shuffle: True
@@ -40,7 +40,7 @@ lr_scheduler:
     verbose: True
 
 trainer:
-  max_epochs: 20
+  max_epochs: 10
   accelerator: gpu
   logger:
     class_path: lightning.pytorch.loggers.WandbLogger

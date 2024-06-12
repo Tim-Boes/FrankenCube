@@ -154,7 +154,7 @@ class ConvolutionalAutoencoderSC16(L.LightningModule):
         # input subcube 2x16x16x16
 
         self.conv0 = nn.Conv3d(
-            in_channels=2, out_channels=16,
+            in_channels=1, out_channels=16,
             kernel_size=(3, 3, 3), stride=1, padding=1)  # 16x16x16x16
         self.pool0 = nn.MaxPool3d(
             kernel_size=(2, 2, 2), stride=2, padding=0)  # 16x8x8x8
@@ -189,7 +189,7 @@ class ConvolutionalAutoencoderSC16(L.LightningModule):
             in_channels=32, out_channels=16,
             kernel_size=(4, 4, 4), stride=2, padding=1)  # 16x8x8x8
         self.deconv2 = nn.ConvTranspose3d(
-            in_channels=16, out_channels=2,
+            in_channels=16, out_channels=1,
             kernel_size=(4, 4, 4), stride=2, padding=1)  # 2x16x16x16
 
     def encode(self, x):
