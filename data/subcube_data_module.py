@@ -5,7 +5,7 @@ import numpy as np
 import lightning as L
 from torch.utils.data import DataLoader
 from torchvision import transforms
-from .cube_indexing import CubeIndex, SliceCubeIndex
+from .cube_indexing import CubeIndex, SliceCubeIndex, CoreSliceCubeIndex
 from .hdf5_subcube_dataset import SubcubeDataset
 from .transformations import SubcubeCrop, SubcubeRotation
 

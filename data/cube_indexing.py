@@ -163,7 +163,7 @@ class CoreSliceCubeIndex(CubeIndex):
         sc_side_length: int,
         stride: int,
         sim: str,
-        region_size: int=256
+        region_size: int=1024
     ):
         super().__init__()
         self.sc_side_length = sc_side_length

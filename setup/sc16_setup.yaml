@@ -40,7 +40,7 @@ lr_scheduler:
     verbose: True
 
 trainer:
-  max_epochs: 5
+  max_epochs: 20
   accelerator: gpu
   logger:
     class_path: lightning.pytorch.loggers.WandbLogger
