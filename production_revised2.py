@@ -37,9 +37,6 @@ class InteractiveSubcubePlot:
         model_path: str,
         dataset: SubcubeDataset,
         dataloader: DataLoader,
-        n_epochs: int,
-        batch_size_: int,
-        learning_rate: int,
     ):
         """_summary_
 
@@ -57,20 +54,10 @@ class InteractiveSubcubePlot:
         self.model_path = model_path
         self.dataset = dataset
         self.dataloader = dataloader
-        self.n_epochs = n_epochs
-        self.batch_size = batch_size_
-        self.learning_rate = learning_rate
 
         # Some placeholder variables needed for later
         self.tree = None
-
-        self.vmin = None
-        self.vmax = None
-
         self.device = None
-
-
-
 
         if torch.cuda.is_available():
             self.device = "cuda:0"
@@ -122,11 +109,13 @@ class InteractiveSubcubePlot:
             coordinates (numpy array): coordinates of each subcubes scatter
             point losses (numpy array): losses of the scatterpoints
         """
+
+
+
+        #### Set the Scatterplot up ###############################
         self.tree = KDTree(coordinates, leaf_size=2)
         self.cmap = pyplot.colormaps['plasma']
-
         self.main_fig, self.main_ax = pyplot.subplots()
-
         self.main_plot = self.main_ax.scatter(
             coordinates[:, 0],
             coordinates[:, 1],
@@ -140,24 +129,28 @@ class InteractiveSubcubePlot:
         self.main_fig.colorbar(
             mappable=self.main_plot
         )
+        self.main_fig.canvas.mpl_connect("motion_notify_event", self.mouse_move)
+        self.main_fig.canvas.mpl_connect("button_press_event", self.onclick)
+        ###########################################################
 
-        pyplot.connect("motion_notify_event", self.mouse_move)
 
+
+        #### Create the motion plot ###############################
         self.fig1, self.ax1 = pyplot.subplots()
         self.motion_plot = self.ax1.imshow(
             numpy.mean(
-                numpy.log10(
-                    self.dataset[0]['data'][0]
-                ) + 25, axis=0
+                    self.dataset[0]['data'][0], axis=0
             ),
             cmap=self.cmap,
-            vmin=-0.0001,
-            vmax=0.0001
         )
         self.fig1.colorbar(
             mappable=self.motion_plot
         )
+        ###########################################################
 
+
+
+        #### Create the comparision plot ##########################
         self.fig2, self.ax2 = pyplot.subplots(1,2)
         comp_plot_left = self.ax2[0].imshow(
             numpy.mean(
@@ -167,17 +160,19 @@ class InteractiveSubcubePlot:
             ),
             cmap=self.cmap,
             vmin=0,
-            vmax=3
+            vmax=10
         )
+        zero_cube_data = self.model(
+            torch.tensor(
+                subcubedataset[0]['data']
+            )
+        )[1].cpu().detach().numpy()[0][0]
+        print(zero_cube_data.shape)
         comp_plot_right = self.ax2[1].imshow(
             numpy.mean(
-                numpy.log10(
-                    self.dataset[0]['data'][0]
-                ) + 25, axis=0
+                zero_cube_data, axis=0
             ),
             cmap=self.cmap,
-            vmin=0,
-            vmax=0.1
         )
         self.fig2.colorbar(
             mappable=comp_plot_left,
@@ -187,10 +182,8 @@ class InteractiveSubcubePlot:
             mappable=comp_plot_right,
             ax=self.ax2[1]
         )
+        ###########################################################
 
-
-        
-        self.main_fig.canvas.mpl_connect("button_press_event", self.onclick)
         pyplot.show()
 
     def mouse_move(self, event):
@@ -211,11 +204,10 @@ class InteractiveSubcubePlot:
                 ).to(device=self.device, dtype=torch.float)
             ).cpu().detach().numpy()
 
-            print(numpy.max(numpy.mean(reconstructed_subcube[0][0], axis=0)))
-            print(numpy.min(numpy.mean(reconstructed_subcube[0][0], axis=0)))
-
             self.ax1.imshow(
-                numpy.mean(reconstructed_subcube[0][0], axis=0),
+                numpy.mean(
+                        reconstructed_subcube[0][0], axis=0
+                ),
                 cmap=self.cmap,
             )
 
@@ -236,8 +228,10 @@ class InteractiveSubcubePlot:
                     subcube
                 ).to(self.device, dtype=torch.float)
             enc_output, dec_output = self.model(subcube_tensor)
-            print(enc_output)
-            reconstruction = numpy.mean(dec_output.cpu().detach().numpy()[0][0], axis=0)
+            
+            reconstruction = numpy.mean(
+                    dec_output.cpu().detach().numpy()[0][0], axis=0
+            )
 
             data = numpy.mean((numpy.log10(subcube[0]) + 25), axis=0)
 
@@ -245,13 +239,11 @@ class InteractiveSubcubePlot:
                 data,
                 cmap=self.cmap,
                 vmin=0,
-                vmax=3
+                vmax=5
             )
             self.ax2[1].imshow(
                 reconstruction,
                 cmap=self.cmap,
-                vmin=0,
-                vmax=0.1
             )
 
             self.fig2.canvas.draw()
@@ -259,17 +251,17 @@ class InteractiveSubcubePlot:
 
 if __name__ == "__main__":
 
-    MODEL_PATH = '/home/tboes/Dokumente/CODE/TIM_REPO/FrankenCube/frankencube/7e819kbd/checkpoints/epoch=15-step=250048.ckpt'
+    MODEL_PATH = '/home/ace/Documents/CODE/TIM_REPO/FrankenCube/frankencube/amlbnisv/checkpoints/epoch=9-step=156280.ckpt'
 
     CKP_PATH, EPOCH = os.path.split(MODEL_PATH)
 
     subcubedataset = SubcubeDataset(
-        data_directories=['/home/tboes/Dokumente/DATA/prp_files'],
+        data_directories=['/media/ace/Warehouse/DATA/prp_files'],
         extension=".hdf5",
         indexing=CoreSliceCubeIndex,
         sc_side_length=16,
         stride=16,
-        physical_paramters=["dens", "temp"],
+        physical_paramters=["dens"],
     )
 
     dl = DataLoader(
@@ -282,10 +274,7 @@ if __name__ == "__main__":
     ISP = InteractiveSubcubePlot(
         model_path=MODEL_PATH,
         dataset=subcubedataset,
-        dataloader=dl,
-        n_epochs=8,
-        batch_size_=32,
-        learning_rate=0.001,
+        dataloader=dl
     )
 
     print(len(subcubedataset))
