@@ -195,11 +195,7 @@ class ConvolutionalAutoencoderSC16(L.LightningModule):
     def encode(self, x):
         """Encode into tensor
         """
-        x = torch.clip(
-            torch.log10(x) + self.log_offset,
-            min=self.vmin,
-            max=self.vmax
-        )
+
         x = F.relu(self.conv0(x))
         x = self.pool0(x)
         x = F.relu(self.conv1(x))

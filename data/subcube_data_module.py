@@ -7,7 +7,7 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 from .cube_indexing import CubeIndex, SliceCubeIndex, CoreSliceCubeIndex
 from .hdf5_subcube_dataset import SubcubeDataset
-from .transformations import SubcubeCrop, SubcubeRotation
+from .transformations import SubcubeCrop, SubcubeRotation, IntensityScale
 
 
 class SubcubeDataModule(L.LightningDataModule):
@@ -59,7 +59,8 @@ class SubcubeDataModule(L.LightningDataModule):
         # Note: here I use a given sc side length
         self.transformation_train = transforms.Compose([
             SubcubeRotation(flip=flip),
-            SubcubeCrop(crop_size=crop_size)
+            SubcubeCrop(crop_size=crop_size),
+            IntensityScale(vmin=0, vmax=10, shift=25)
         ])
 
         self.data_train = None

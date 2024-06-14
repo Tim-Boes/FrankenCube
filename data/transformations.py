@@ -61,3 +61,23 @@ class SubcubeCrop():
         input_tensor = torch.swapaxes(input_tensor, axis0=1, axis1=2)
 
         return input_tensor
+
+
+
+class IntensityScale():
+    """Crop a Tensor to a given size
+    """
+    def __init__(self, vmin, vmax, shift):
+        self.vmin = vmin
+        self.vmax = vmax
+        self.shift = shift
+
+    def __call__(self, x):
+
+        x = torch.clip(
+            torch.log10(x) + self.shift,
+            min=self.vmin,
+            max=self.vmax
+        )
+
+        return x

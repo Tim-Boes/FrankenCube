@@ -26,7 +26,7 @@ from sklearn.neighbors import KDTree
 # Import The model or the autoencoder
 import models.convolutional_autoencoder as mc
 from data.hdf5_subcube_dataset import SubcubeDataset
-from data.cube_indexing import CoreSliceCubeIndex
+from data.cube_indexing import CoreSliceCubeIndex, SliceCubeIndex
 
 
 class InteractiveSubcubePlot:
@@ -81,8 +81,7 @@ class InteractiveSubcubePlot:
         losses = []
         for item in tqdm(self.dataloader):
             data_spectrum = torch.tensor(item["data"]).to(self.device, dtype=torch.float)
-            reconstructed = self.model(data_spectrum)[1]
-            encoded = self.model(data_spectrum)[0]
+            encoded, reconstructed = self.model(data_spectrum)
             # loss has shape of batch
             loss = torch.mean(torch.square(reconstructed - data_spectrum).flatten(1), dim=1)
 
@@ -116,12 +115,14 @@ class InteractiveSubcubePlot:
         self.tree = KDTree(coordinates, leaf_size=2)
         self.cmap = pyplot.colormaps['plasma']
         self.main_fig, self.main_ax = pyplot.subplots()
+        print(numpy.min(losses), numpy.max(losses))
+        indx_range=numpy.argwhere(losses > 0.2e-12)
         self.main_plot = self.main_ax.scatter(
-            coordinates[:, 0],
-            coordinates[:, 1],
-            c=losses[:],
-            s=10,
-            alpha=0.75,
+            coordinates[indx_range, 0],
+            coordinates[indx_range, 1],
+            c=losses[indx_range],
+            s=20,
+            alpha=1,
             cmap=self.cmap
         )
         self.main_ax.set_xlabel('X')
@@ -135,6 +136,25 @@ class InteractiveSubcubePlot:
 
 
 
+
+        #### Find the lower and upper colorbar limits #############
+        recon_ranges=[]
+        for item in coordinates[indx_range]:
+            recon_ranges.append(numpy.mean(self.model.decode(
+                torch.tensor(
+                    numpy.array(
+                        item
+                    )
+                ).to(device=self.device, dtype=torch.float)
+            ).cpu().detach().numpy()[0][0], axis=0))
+        self.vmax=numpy.max(recon_ranges)
+        self.vmin=numpy.min(recon_ranges)
+        print(self.vmax, self.vmin)
+        ###########################################################
+
+
+
+
         #### Create the motion plot ###############################
         self.fig1, self.ax1 = pyplot.subplots()
         self.motion_plot = self.ax1.imshow(
@@ -142,6 +162,8 @@ class InteractiveSubcubePlot:
                     self.dataset[0]['data'][0], axis=0
             ),
             cmap=self.cmap,
+            vmin=self.vmin,
+            vmax=self.vmax
         )
         self.fig1.colorbar(
             mappable=self.motion_plot
@@ -164,15 +186,16 @@ class InteractiveSubcubePlot:
         )
         zero_cube_data = self.model(
             torch.tensor(
-                subcubedataset[0]['data']
+                numpy.log10(self.dataset[0]['data']) + 25
             )
         )[1].cpu().detach().numpy()[0][0]
-        print(zero_cube_data.shape)
         comp_plot_right = self.ax2[1].imshow(
             numpy.mean(
                 zero_cube_data, axis=0
             ),
             cmap=self.cmap,
+            vmin=self.vmin,
+            vmax=self.vmax
         )
         self.fig2.colorbar(
             mappable=comp_plot_left,
@@ -209,6 +232,8 @@ class InteractiveSubcubePlot:
                         reconstructed_subcube[0][0], axis=0
                 ),
                 cmap=self.cmap,
+                vmin=self.vmin,
+                vmax=self.vmax
             )
 
             self.fig1.canvas.draw()
@@ -239,11 +264,13 @@ class InteractiveSubcubePlot:
                 data,
                 cmap=self.cmap,
                 vmin=0,
-                vmax=5
+                vmax=10
             )
             self.ax2[1].imshow(
                 reconstruction,
                 cmap=self.cmap,
+                vmin=self.vmin,
+                vmax=self.vmax
             )
 
             self.fig2.canvas.draw()
@@ -251,7 +278,7 @@ class InteractiveSubcubePlot:
 
 if __name__ == "__main__":
 
-    MODEL_PATH = '/home/ace/Documents/CODE/TIM_REPO/FrankenCube/frankencube/amlbnisv/checkpoints/epoch=9-step=156280.ckpt'
+    MODEL_PATH = '/home/ace/Documents/CODE/TIM_REPO/FrankenCube/frankencube/qparynfg/checkpoints/epoch=4-step=9310.ckpt'
 
     CKP_PATH, EPOCH = os.path.split(MODEL_PATH)
 
