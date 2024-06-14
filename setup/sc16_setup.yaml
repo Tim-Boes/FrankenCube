@@ -15,7 +15,7 @@ data:
     extension: '.hdf5'
     sc_side_length: 32
     stride: 16
-    indexing: CoreSliceCubeIndex
+    indexing: SliceCubeIndex
     physical_parameters: ['dens']
     batch_size: 32
     num_workers: 20
