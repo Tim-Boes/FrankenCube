@@ -128,10 +128,7 @@ class ConvolutionalAutoencoderSC16(L.LightningModule):
 
     def __init__(
             self,
-            bottleneck: int = 2,
-            log_offset: int = 24,
-            vmin: int = 0,
-            vmax: int = 8
+            bottleneck: int = 2
             ):
         """Initialize the convolutional autoencoder
 
@@ -142,9 +139,6 @@ class ConvolutionalAutoencoderSC16(L.LightningModule):
 
         super().__init__()
         self.bottleneck = bottleneck
-        self.log_offset = log_offset
-        self.vmin = vmin
-        self.vmax = vmax
 
         # implement simple loss frunction
         # self.loss = nn.MSELoss()

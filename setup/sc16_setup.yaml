@@ -14,7 +14,7 @@ data:
     stride: 16
     indexing: SliceCubeIndex
     physical_parameters: ['dens']
-    batch_size: 32
+    batch_size: 512
     num_workers: 20
     shuffle: True
     flip: 0.5
