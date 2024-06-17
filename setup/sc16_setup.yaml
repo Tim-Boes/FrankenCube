@@ -23,7 +23,7 @@ data:
 optimizer:
   class_path: torch.optim.Adam
   init_args:
-    lr: 0.001
+    lr: 0.0001
 
 lr_scheduler:
   class_path: lightning.pytorch.cli.ReduceLROnPlateau
@@ -37,7 +37,7 @@ lr_scheduler:
     verbose: True
 
 trainer:
-  max_epochs: 5
+  max_epochs: -1
   accelerator: gpu
   logger:
     class_path: lightning.pytorch.loggers.WandbLogger
@@ -47,4 +47,4 @@ trainer:
   # devices: 4
   # precision: 32
 
-# ckpt_path: spitzer_model.ckpt
+ckpt_path: '/root/FrankenCube/frankencube/rohy8i66/checkpoints/epoch=4-step=40010.ckpt'
