@@ -27,6 +27,7 @@ from sklearn.neighbors import KDTree
 import models.convolutional_autoencoder as mc
 from data.hdf5_subcube_dataset import SubcubeDataset
 from data.cube_indexing import CoreSliceCubeIndex, SliceCubeIndex
+from data.transformations import IntensityScale
 
 
 class InteractiveSubcubePlot:
@@ -35,7 +36,6 @@ class InteractiveSubcubePlot:
     def __init__(
         self,
         model_path: str,
-        dataset: SubcubeDataset,
         dataloader: DataLoader,
     ):
         """_summary_
@@ -52,8 +52,8 @@ class InteractiveSubcubePlot:
         """
 
         self.model_path = model_path
-        self.dataset = dataset
         self.dataloader = dataloader
+        self.dataset = dataloader.dataset
 
         # Some placeholder variables needed for later
         self.tree = None
@@ -116,7 +116,7 @@ class InteractiveSubcubePlot:
         self.cmap = pyplot.colormaps['plasma']
         self.main_fig, self.main_ax = pyplot.subplots()
         print(numpy.min(losses), numpy.max(losses))
-        indx_range=numpy.argwhere(losses > 0.2e-12)
+        indx_range=numpy.argwhere(losses > 0.04)
         self.main_plot = self.main_ax.scatter(
             coordinates[indx_range, 0],
             coordinates[indx_range, 1],
@@ -135,9 +135,7 @@ class InteractiveSubcubePlot:
         ###########################################################
 
 
-
-
-        #### Find the lower and upper colorbar limits #############
+        #### Find the Ranges ######################################
         recon_ranges=[]
         for item in coordinates[indx_range]:
             recon_ranges.append(numpy.mean(self.model.decode(
@@ -150,16 +148,14 @@ class InteractiveSubcubePlot:
         self.vmax=numpy.max(recon_ranges)
         self.vmin=numpy.min(recon_ranges)
         print(self.vmax, self.vmin)
+
         ###########################################################
-
-
-
 
         #### Create the motion plot ###############################
         self.fig1, self.ax1 = pyplot.subplots()
         self.motion_plot = self.ax1.imshow(
             numpy.mean(
-                    self.dataset[0]['data'][0], axis=0
+                    self.dataset[0]['data'][0].cpu().detach().numpy(), axis=0
             ),
             cmap=self.cmap,
             vmin=self.vmin,
@@ -176,18 +172,14 @@ class InteractiveSubcubePlot:
         self.fig2, self.ax2 = pyplot.subplots(1,2)
         comp_plot_left = self.ax2[0].imshow(
             numpy.mean(
-                numpy.log10(
-                    self.dataset[0]['data'][0]
-                ) + 25, axis=0
+                self.dataset[0]['data'][0].cpu().detach().numpy(), axis=0
             ),
             cmap=self.cmap,
-            vmin=0,
-            vmax=10
+            vmin=self.vmin,
+            vmax=self.vmax
         )
         zero_cube_data = self.model(
-            torch.tensor(
-                numpy.log10(self.dataset[0]['data']) + 25
-            )
+            self.dataset[0]['data']
         )[1].cpu().detach().numpy()[0][0]
         comp_plot_right = self.ax2[1].imshow(
             numpy.mean(
@@ -248,23 +240,23 @@ class InteractiveSubcubePlot:
             index = self.tree.query([[event.xdata, event.ydata]], k=1)[1][0][0]
             self.ax2[0].cla()
             self.ax2[1].cla()
-            subcube = self.dataset[index]['data']
-            subcube_tensor = torch.tensor(
-                    subcube
-                ).to(self.device, dtype=torch.float)
-            enc_output, dec_output = self.model(subcube_tensor)
+
+            enc_output, dec_output = self.model(
+                self.dataset[index]['data'].to(self.device, dtype=torch.float)
+            )
             
             reconstruction = numpy.mean(
                     dec_output.cpu().detach().numpy()[0][0], axis=0
             )
-
-            data = numpy.mean((numpy.log10(subcube[0]) + 25), axis=0)
+            data = numpy.mean(
+                self.dataset[index]['data'][0].cpu().detach().numpy(), axis=0
+            )
 
             self.ax2[0].imshow(
                 data,
                 cmap=self.cmap,
-                vmin=0,
-                vmax=10
+                vmin=self.vmin,
+                vmax=self.vmax
             )
             self.ax2[1].imshow(
                 reconstruction,
@@ -278,33 +270,32 @@ class InteractiveSubcubePlot:
 
 if __name__ == "__main__":
 
-    MODEL_PATH = '/home/ace/Documents/CODE/TIM_REPO/FrankenCube/frankencube/qparynfg/checkpoints/epoch=4-step=9310.ckpt'
-
+    MODEL_PATH = '/home/ace/Documents/CODE/TIM_REPO/FrankenCube/frankencube/khy1b4fh/checkpoints/epoch=0-step=8002.ckpt'
     CKP_PATH, EPOCH = os.path.split(MODEL_PATH)
-
-    subcubedataset = SubcubeDataset(
-        data_directories=['/media/ace/Warehouse/DATA/prp_files'],
-        extension=".hdf5",
-        indexing=CoreSliceCubeIndex,
-        sc_side_length=16,
-        stride=16,
-        physical_paramters=["dens"],
-    )
-
     dl = DataLoader(
-            dataset=subcubedataset,
-            batch_size=32,
-            shuffle=False,
-            num_workers=4
+        dataset=SubcubeDataset(
+            data_directories=['/media/ace/Warehouse/DATA/prp_files'],
+            extension=".hdf5",
+            indexing=CoreSliceCubeIndex,
+            sc_side_length=16,
+            stride=16,
+            physical_paramters=["dens"],
+            transformation=IntensityScale(
+                vmin=0,
+                vmax=10,
+                shift=25
+            )
+        ),
+        batch_size=32,
+        shuffle=False,
+        num_workers=8,  
     )
 
     ISP = InteractiveSubcubePlot(
         model_path=MODEL_PATH,
-        dataset=subcubedataset,
         dataloader=dl
     )
 
-    print(len(subcubedataset))
 
     # ISP.generate_coordinates(save=True)
 
