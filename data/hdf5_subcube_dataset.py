@@ -11,6 +11,7 @@ import os
 import h5py
 import numpy as np
 from torch.utils.data import Dataset
+import torch
 from .cube_indexing import CubeIndex, SliceCubeIndex, CoreSliceCubeIndex
 
 
@@ -187,7 +188,7 @@ class SubcubeDataset(Dataset):
                 counter += 1
 
             if self.transformation:
-                field = self.transformation(field)
+                field = self.transformation(torch.from_numpy(field))
 
         result = {
             'data': field,
