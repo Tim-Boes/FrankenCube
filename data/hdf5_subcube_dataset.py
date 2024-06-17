@@ -188,7 +188,7 @@ class SubcubeDataset(Dataset):
                 counter += 1
 
             if self.transformation:
-                field = self.transformation(torch.from_numpy(field))
+                field = self.transformation(field)
 
         result = {
             'data': field,

@@ -8,8 +8,8 @@
             "name": "FrankenCube",
             "type": "debugpy",
             "request": "launch",
-            "program": "production_revised.py",
-            // "args": "fit --config ./setup/subcube.yaml",
+            "program": "frankencube.py",
+            "args": "fit --config ./setup/sc16_setup_long.yaml",
             "console": "integratedTerminal",
             "justMyCode": true
         }
