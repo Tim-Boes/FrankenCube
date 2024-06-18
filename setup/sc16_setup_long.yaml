@@ -8,14 +8,14 @@ model:
 data:
   class_path: data.SubcubeDataModule
   init_args:
-    data_directories: ["/home/ace/Documents/DATA/prp_files"]
+    data_directories: ["/root/prp_files"]
     extension: '.hdf5'
     sc_side_length: 32
     stride: 16
     indexing: CoreSliceCubeIndex
     physical_parameters: ['dens']
-    batch_size: 32
-    num_workers: 2
+    batch_size: 512
+    num_workers: 30
     shuffle: True
     flip: 0.5
     crop_size: 16
@@ -38,7 +38,7 @@ lr_scheduler:
 
 trainer:
   max_epochs: -1
-  accelerator: cpu
+  accelerator: gpu
   logger:
     class_path: lightning.pytorch.loggers.WandbLogger
     init_args:
