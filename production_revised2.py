@@ -79,15 +79,16 @@ class InteractiveSubcubePlot:
         """
         coordinates = []
         losses = []
+        id_order = []
         for item in tqdm(self.dataloader):
             data_spectrum = torch.tensor(item["data"]).to(self.device, dtype=torch.float)
             encoded, reconstructed = self.model(data_spectrum)
             # loss has shape of batch
             loss = torch.mean(torch.square(reconstructed - data_spectrum).flatten(1), dim=1)
-
+            id_order.append(item['id'])
             coordinates.append(encoded.cpu().detach().numpy())
             losses.append(loss.cpu().detach().numpy())
-
+        id_order = numpy.array(id_order).flatten()
         coordinates = numpy.array(coordinates).reshape(-1, 2)
         losses = numpy.array(losses).flatten()
 
@@ -96,6 +97,7 @@ class InteractiveSubcubePlot:
             head, tail = os.path.split(self.model_path)
             numpy.save(head + "/coordinates", arr=numpy.array(coordinates))
             numpy.save(head + "/losses", arr=numpy.array(losses))
+            numpy.save(head + "/id_order", arr=numpy.array(id_order))
 
         return coordinates, losses
 
