@@ -67,17 +67,29 @@ class SubcubeCrop():
 class IntensityScale():
     """Crop a Tensor to a given size
     """
-    def __init__(self, vmin, vmax, shift):
+    def __init__(self, vmin, vmax, shift, tensor=True):
         self.vmin = vmin
         self.vmax = vmax
         self.shift = shift
+        self.tensor = tensor
 
     def __call__(self, x):
 
-        x = torch.clip(
-            torch.log10(x) + self.shift,
-            min=self.vmin,
-            max=self.vmax
-        )
+        if self.tensor is True:
+
+            x = torch.clip(
+                torch.log10(x) + self.shift,
+                min=self.vmin,
+                max=self.vmax
+            )
+
+        else:
+
+            x = torch.clip(
+                torch.log10(torch.from_numpy(x)) + self.shift,
+                min=self.vmin,
+                max=self.vmax
+            )
 
         return x
+
