@@ -85,7 +85,7 @@ class InteractiveSubcubePlot:
             encoded, reconstructed = self.model(data_spectrum)
             # loss has shape of batch
             loss = torch.mean(torch.square(reconstructed - data_spectrum).flatten(1), dim=1)
-            id_order.append(item['id'])
+            id_order.append(item['id'].cpu().detach().numpy())
             coordinates.append(encoded.cpu().detach().numpy())
             losses.append(loss.cpu().detach().numpy())
         id_order = numpy.array(id_order).flatten()
