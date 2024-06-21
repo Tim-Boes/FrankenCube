@@ -64,7 +64,7 @@ class InteractiveSubcubePlot:
         else:
             self.device = "cpu"
 
-        self.model = mc.ConvolutionalAutoencoderSC16.load_from_checkpoint(
+        self.model = mc.ConvolutionalAutoencoderSC16Medium.load_from_checkpoint(
             checkpoint_path=self.model_path
         )
 
@@ -270,11 +270,11 @@ class InteractiveSubcubePlot:
 
 if __name__ == "__main__":
 
-    MODEL_PATH = '/home/ace/Documents/CODE/TIM_REPO/FrankenCube/frankencube/khy1b4fh/checkpoints/epoch=0-step=8002.ckpt'
+    MODEL_PATH = '/root/FrankenCube/frankencube/339fusf1/checkpoints/epoch=638-step=624303.ckpt'
     CKP_PATH, EPOCH = os.path.split(MODEL_PATH)
     dl = DataLoader(
         dataset=SubcubeDataset(
-            data_directories=['/media/ace/Warehouse/DATA/prp_files'],
+            data_directories=['/root/prp_files'],
             extension=".hdf5",
             indexing=CoreSliceCubeIndex,
             sc_side_length=16,
@@ -283,12 +283,13 @@ if __name__ == "__main__":
             transformation=IntensityScale(
                 vmin=0,
                 vmax=10,
-                shift=25
+                shift=25,
+                tensor=False
             )
         ),
-        batch_size=32,
+        batch_size=512,
         shuffle=False,
-        num_workers=8,  
+        num_workers=20,  
     )
 
     ISP = InteractiveSubcubePlot(
@@ -297,9 +298,9 @@ if __name__ == "__main__":
     )
 
 
-    # ISP.generate_coordinates(save=True)
+    ISP.generate_coordinates(save=True)
 
-
+'''
     ISP.backend_plots(
         coordinates=numpy.load(
             CKP_PATH + '/coordinates.npy'
@@ -308,4 +309,4 @@ if __name__ == "__main__":
             CKP_PATH + '/losses.npy'
         ),
     )
-
+'''
