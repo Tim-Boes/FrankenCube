@@ -522,15 +522,15 @@ class ConvolutionalAutoencoderSC16Medium(L.LightningModule):
         x = F.relu(self.conv4(x))
         x = self.pool4(x)
         x = x.view(-1, 256*2*2*2)
-        x = F.relu(self.fc1(x))
+        x = F.tanh(self.fc1(x))
         x = self.fc2(x)
         return x
 
     def decode(self, x):
         """decode form tensor
         """
-        x = F.relu(self.fc3(x))
-        x = F.relu(self.fc4(x))
+        x = F.tanh(self.fc3(x))
+        x = F.tanh(self.fc4(x))
         x = x.view(-1, 256, 2, 2, 2)
         x = F.relu(self.deconv0(x))
         x = F.relu(self.deconv1(x))

@@ -101,7 +101,7 @@ class InteractiveSubcubePlot:
 
         return coordinates, losses
 
-    def backend_plots(self, coordinates, losses):
+    def backend_plots(self, coordinates, losses, PLOT_RANGES):
         """Function responsible for plotting all data. One scatter plot,
             one decoded coordinates plot and one plot comparing the subcube
             before and after decoding.
@@ -117,12 +117,12 @@ class InteractiveSubcubePlot:
         self.tree = KDTree(coordinates, leaf_size=2)
         self.cmap = pyplot.colormaps['plasma']
         self.main_fig, self.main_ax = pyplot.subplots()
-        print(numpy.min(losses), numpy.max(losses))
-        indx_range=numpy.argwhere(losses > 0.04)
+        # print(numpy.min(losses), numpy.max(losses))
+        # indx_range=numpy.argwhere(losses > 0.00)
         self.main_plot = self.main_ax.scatter(
-            coordinates[indx_range, 0],
-            coordinates[indx_range, 1],
-            c=losses[indx_range],
+            coordinates[:, 0],
+            coordinates[:, 1],
+            c=losses[:],
             s=20,
             alpha=1,
             cmap=self.cmap
@@ -136,10 +136,12 @@ class InteractiveSubcubePlot:
         self.main_fig.canvas.mpl_connect("button_press_event", self.onclick)
         ###########################################################
 
+        print('scatter okay')
 
+        '''
         #### Find the Ranges ######################################
         recon_ranges=[]
-        for item in coordinates[indx_range]:
+        for item in tqdm(coordinates[:]):
             recon_ranges.append(numpy.mean(self.model.decode(
                 torch.tensor(
                     numpy.array(
@@ -150,8 +152,12 @@ class InteractiveSubcubePlot:
         self.vmax=numpy.max(recon_ranges)
         self.vmin=numpy.min(recon_ranges)
         print(self.vmax, self.vmin)
-
         ###########################################################
+        '''
+
+        self.vmin=PLOT_RANGES[0]
+        self.vmax=PLOT_RANGES[1]
+
 
         #### Create the motion plot ###############################
         self.fig1, self.ax1 = pyplot.subplots()
@@ -242,10 +248,14 @@ class InteractiveSubcubePlot:
             index = self.tree.query([[event.xdata, event.ydata]], k=1)[1][0][0]
             self.ax2[0].cla()
             self.ax2[1].cla()
+            id_order = numpy.load('/home/ace/Documents/CODE/TIM_REPO/FrankenCube/frankencube/339fusf1/checkpoints/id_order.npy')
+            print(id_order[index])
+            print(index)
 
             enc_output, dec_output = self.model(
                 self.dataset[index]['data'].to(self.device, dtype=torch.float)
             )
+            print(enc_output)
             
             reconstruction = numpy.mean(
                     dec_output.cpu().detach().numpy()[0][0], axis=0
@@ -270,13 +280,32 @@ class InteractiveSubcubePlot:
             self.fig2.canvas.draw()
 
 
+def find_bounds(dataloader):
+    mins = []
+    maxs = []
+    for item in tqdm(dataloader):
+        mins.append(numpy.min(item['data'].cpu().detach().numpy()))
+        maxs.append(numpy.max(item['data'].cpu().detach().numpy()))
+    numpy.save(CKP_PATH + '/PLOT_RANGES', arr=numpy.array([numpy.min(mins), numpy.max(maxs)]))
+
+
+def hist_plot(CKP_PATH):
+    losses = numpy.load(CKP_PATH + '/losses.npy')
+    print(len(losses), len(numpy.argwhere(losses < 0.026)))
+    pyplot.hist(
+        losses, bins=100
+    )
+    pyplot.yscale('log')
+    pyplot.show()
+
+
 if __name__ == "__main__":
 
-    MODEL_PATH = '/root/FrankenCube/frankencube/339fusf1/checkpoints/epoch=638-step=624303.ckpt'
+    MODEL_PATH = '/home/ace/Documents/CODE/TIM_REPO/FrankenCube/frankencube/339fusf1/checkpoints/epoch=638-step=624303.ckpt'
     CKP_PATH, EPOCH = os.path.split(MODEL_PATH)
     dl = DataLoader(
         dataset=SubcubeDataset(
-            data_directories=['/root/prp_files'],
+            data_directories=['/media/ace/Warehouse/DATA/prp_files'],
             extension=".hdf5",
             indexing=CoreSliceCubeIndex,
             sc_side_length=16,
@@ -291,7 +320,7 @@ if __name__ == "__main__":
         ),
         batch_size=512,
         shuffle=False,
-        num_workers=20,  
+        num_workers=2,  
     )
 
     ISP = InteractiveSubcubePlot(
@@ -300,7 +329,9 @@ if __name__ == "__main__":
     )
 
 
-    ISP.generate_coordinates(save=True)
+
+    # ISP.generate_coordinates(save=True)
+
 
 '''
     ISP.backend_plots(
@@ -310,5 +341,8 @@ if __name__ == "__main__":
         losses=numpy.load(
             CKP_PATH + '/losses.npy'
         ),
+        PLOT_RANGES=numpy.load(
+            CKP_PATH + '/PLOT_RANGES.npy'
+        )
     )
 '''
