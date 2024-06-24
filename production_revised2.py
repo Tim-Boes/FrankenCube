@@ -301,11 +301,11 @@ def hist_plot(CKP_PATH):
 
 if __name__ == "__main__":
 
-    MODEL_PATH = '/home/ace/Documents/CODE/TIM_REPO/FrankenCube/frankencube/339fusf1/checkpoints/epoch=638-step=624303.ckpt'
+    MODEL_PATH = '/root/FrankenCube/frankencube/2wrtc7kv/checkpoints/epoch=186-step=182699.ckpt'
     CKP_PATH, EPOCH = os.path.split(MODEL_PATH)
     dl = DataLoader(
         dataset=SubcubeDataset(
-            data_directories=['/media/ace/Warehouse/DATA/prp_files'],
+            data_directories=['/root/prp_files'],
             extension=".hdf5",
             indexing=CoreSliceCubeIndex,
             sc_side_length=16,
@@ -331,6 +331,8 @@ if __name__ == "__main__":
 
 
     # ISP.generate_coordinates(save=True)
+
+    # find_bounds(dl)
 
 
 '''
