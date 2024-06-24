@@ -331,7 +331,7 @@ if __name__ == "__main__":
 
     # ISP.generate_coordinates(save=True)
 
-    find_bounds(dl)
+    # find_bounds(dl)
 
     # hist_plot(CKP_PATH=CKP_PATH)
 
