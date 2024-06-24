@@ -136,27 +136,8 @@ class InteractiveSubcubePlot:
         ###########################################################
 
         print('scatter okay')
-
-        '''
-        #### Find the Ranges ######################################
-        recon_ranges=[]
-        for item in tqdm(coordinates[:]):
-            recon_ranges.append(numpy.mean(self.model.decode(
-                torch.tensor(
-                    numpy.array(
-                        item
-                    )
-                ).to(device=self.device, dtype=torch.float)
-            ).cpu().detach().numpy()[0][0], axis=0))
-        self.vmax=numpy.max(recon_ranges)
-        self.vmin=numpy.min(recon_ranges)
-        print(self.vmax, self.vmin)
-        ###########################################################
-        '''
-
         self.vmin=PLOT_RANGES[0]
         self.vmax=PLOT_RANGES[1]
-
 
         #### Create the motion plot ###############################
         self.fig1, self.ax1 = pyplot.subplots()
@@ -247,8 +228,8 @@ class InteractiveSubcubePlot:
             index = self.tree.query([[event.xdata, event.ydata]], k=1)[1][0][0]
             self.ax2[0].cla()
             self.ax2[1].cla()
-            id_order = numpy.load('/home/ace/Documents/CODE/TIM_REPO/FrankenCube/frankencube/339fusf1/checkpoints/id_order.npy')
-            print(id_order[index])
+            #id_order = numpy.load('/home/tboes/Dokumente/CODE/TIM_REPO/FrankenCube/frankencube/2wrtc7kv/checkpoints/id_order.npy')
+            #print(id_order[index])
             print(index)
 
             enc_output, dec_output = self.model(
@@ -279,7 +260,7 @@ class InteractiveSubcubePlot:
             self.fig2.canvas.draw()
 
 
-def find_bounds(dataloader):
+def find_bounds(dataloader, CKP_PATH):
     mins = []
     maxs = []
     for item in tqdm(dataloader):
@@ -300,11 +281,11 @@ def hist_plot(CKP_PATH):
 
 if __name__ == "__main__":
 
-    MODEL_PATH = '/root/FrankenCube/frankencube/2wrtc7kv/checkpoints/epoch=186-step=182699.ckpt'
+    MODEL_PATH = '/home/tboes/Dokumente/CODE/TIM_REPO/FrankenCube/frankencube/2wrtc7kv/checkpoints/epoch=186-step=182699.ckpt'
     CKP_PATH, EPOCH = os.path.split(MODEL_PATH)
     dl = DataLoader(
         dataset=SubcubeDataset(
-            data_directories=['/root/prp_files'],
+            data_directories=['/home/tboes/Dokumente/DATA/prp_files'],
             extension=".hdf5",
             indexing=CoreSliceCubeIndex,
             sc_side_length=16,
@@ -319,15 +300,13 @@ if __name__ == "__main__":
         ),
         batch_size=512,
         shuffle=False,
-        num_workers=2,  
+        num_workers=2, 
     )
 
     ISP = InteractiveSubcubePlot(
         model_path=MODEL_PATH,
         dataloader=dl
     )
-
-
 
     # ISP.generate_coordinates(save=True)
 

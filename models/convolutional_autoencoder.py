@@ -412,6 +412,7 @@ class ConvolutionalAutoencoderSC16Long(L.LightningModule):
         )
         return loss
 
+
 class ConvolutionalAutoencoderSC16Medium(L.LightningModule):
     """The LightningCore module organizes the code
     """
@@ -439,35 +440,35 @@ class ConvolutionalAutoencoderSC16Medium(L.LightningModule):
 
         self.conv0 = nn.Conv3d(
             in_channels=1, out_channels=16,
-            kernel_size=(3, 3, 3), stride=1, padding=1) # 16x16x16x16
+            kernel_size=(3, 3, 3), stride=1, padding=1)  # 16x16x16x16
 
         self.pool0 = nn.MaxPool3d(
             kernel_size=(5, 5, 5), stride=1, padding=0)  # 16x12x12x12
 
         self.conv1 = nn.Conv3d(
             in_channels=16, out_channels=32,
-            kernel_size=(3, 3, 3), stride=1, padding=1) # 32x12x12x12
+            kernel_size=(3, 3, 3), stride=1, padding=1)  # 32x12x12x12
 
         self.pool1 = nn.MaxPool3d(
             kernel_size=(5, 5, 5), stride=1, padding=0)  # 32x8x8x8
 
         self.conv2 = nn.Conv3d(
             in_channels=32, out_channels=64,
-            kernel_size=(3, 3, 3), stride=1, padding=1) # 64x8x8x8
+            kernel_size=(3, 3, 3), stride=1, padding=1)  # 64x8x8x8
 
         self.pool2 = nn.MaxPool3d(
             kernel_size=(3, 3, 3), stride=1, padding=0)  # 64x6x6x6
 
         self.conv3 = nn.Conv3d(
             in_channels=64, out_channels=128,
-            kernel_size=(3, 3, 3), stride=1, padding=1) # 128x6x6x6
+            kernel_size=(3, 3, 3), stride=1, padding=1)  # 128x6x6x6
 
         self.pool3 = nn.MaxPool3d(
             kernel_size=(3, 3, 3), stride=1, padding=0)  # 128x4x4x4
 
         self.conv4 = nn.Conv3d(
             in_channels=128, out_channels=256,
-            kernel_size=(3, 3, 3), stride=1, padding=1) # 256x4x4x4
+            kernel_size=(3, 3, 3), stride=1, padding=1)  # 256x4x4x4
 
         self.pool4 = nn.MaxPool3d(
             kernel_size=(3, 3, 3), stride=1, padding=0)  # 256x2x2x2
