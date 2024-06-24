@@ -3,12 +3,12 @@
 # standard stuff
 import os
 import copy
+import matplotlib.figure
 import numpy
 
 # import matplotlib stuff
+import matplotlib
 from matplotlib import pyplot
-from matplotlib.colors import LogNorm
-from matplotlib.colors import Normalize
 
 # torch stuff
 import torch
@@ -26,6 +26,8 @@ from sklearn.neighbors import KDTree
 # Import The model or the autoencoder
 import models.convolutional_autoencoder as mc
 from data.hdf5_subcube_dataset import SubcubeDataset
+from data.cube_indexing import CoreSliceCubeIndex, SliceCubeIndex
+from data.transformations import IntensityScale
 
 
 class InteractiveSubcubePlot:
@@ -35,9 +37,6 @@ class InteractiveSubcubePlot:
         self,
         model_path: str,
         dataloader: DataLoader,
-        n_epochs: int,
-        batch_size_: int,
-        learning_rate: int,
     ):
         """_summary_
 
@@ -54,75 +53,20 @@ class InteractiveSubcubePlot:
 
         self.model_path = model_path
         self.dataloader = dataloader
-        self.n_epochs = n_epochs
-        self.batch_size = batch_size_
-        self.learning_rate = learning_rate
+        self.dataset = dataloader.dataset
 
         # Some placeholder variables needed for later
-        self.output = None
         self.tree = None
-        self.fig2 = None
-        self.fig3 = None
-        self.axs = None
         self.device = None
-
-        self.loss_function = torch.nn.MSELoss()
 
         if torch.cuda.is_available():
             self.device = "cuda:0"
         else:
             self.device = "cpu"
 
-        self.model = mc.ConvolutionalAutoencoderSC16.load_from_checkpoint(
+        self.model = mc.ConvolutionalAutoencoderSC16Medium.load_from_checkpoint(
             checkpoint_path=self.model_path
         )
-
-        self.optimizer = torch.optim.Adam(
-            self.model.parameters(), lr=self.learning_rate
-        )
-
-    def training_model(self, best_model: bool):
-        """Train the model"""
-
-        print(torch.backends.cudnn.version())
-
-        print(self.device)
-        self.model.to(self.device)
-        summary(self.model, input_size=(1, 869))
-
-        best_loss = numpy.inf
-        model_file = "theModel.pt"
-
-        # If we have a "best model use that"
-        if best_model is True:
-            best_model = torch.load(model_file)
-            self.model.load_state_dict(best_model)
-        # Iterate over the epchs
-        for epoch in range(self.n_epochs):
-            # setup a progressbar for the terminal
-            progress_bar = tqdm(self.dataloader)
-            progress_bar.set_description("Epoch " + str(epoch))
-
-            train_loss = 0
-            for item in progress_bar:
-                # get the data here
-                spectrum = item["data"]
-                # make that a tensor for usage on cuda
-                spectrum = spectrum.to(self.device, dtype=torch.float)
-                self.optimizer.zero_grad()
-                outputs = self.model(spectrum)
-                # define a loss function
-                loss = self.loss_function(outputs[1], spectrum)
-
-                loss.backward()
-                self.optimizer.step()
-                train_loss += loss.item() * self.batch_size
-                progress_bar.set_postfix(loss=str(train_loss))
-
-            if train_loss < best_loss:
-                best_loss = train_loss
-                best_model = copy.deepcopy(self.model.state_dict())
-                torch.save(best_model, model_file)
 
     def generate_coordinates(self, save: bool):
         """_summary_
@@ -135,29 +79,15 @@ class InteractiveSubcubePlot:
         """
         coordinates = []
         losses = []
+        id_order = []
         for item in tqdm(self.dataloader):
-            spectrum = torch.unsqueeze(
-                torch.tensor(item["data"]), 0
-            )
-            # collect metadata of the dataset
-            # metadata = dataset.__getitem__(i)["metadata"]
-
-            # assign the data to cuda???
-            spectrumtf = spectrum.to(self.device, dtype=torch.float)
-            self.optimizer.zero_grad()
-
-            # encode that stuff
-            self.output = self.model(spectrumtf)[1].cpu().detach().numpy()
-            coords = self.model(spectrumtf)[0].cpu().detach().numpy()
-            coordinates.append(coords)
-
-            losses.append(
-                self.loss_function(
-                    self.model(spectrumtf)[1],
-                    spectrumtf
-                ).item()
-            )
-
+            data_spectrum = torch.tensor(item["data"]).to(self.device, dtype=torch.float)
+            encoded, reconstructed = self.model(data_spectrum)
+            loss = torch.mean(torch.square(reconstructed - data_spectrum).flatten(1), dim=1)
+            id_order.append(item['id'].cpu().detach().numpy())
+            coordinates.append(encoded.cpu().detach().numpy())
+            losses.append(loss.cpu().detach().numpy())
+        id_order = numpy.array(id_order).flatten()
         coordinates = numpy.array(coordinates).reshape(-1, 2)
         losses = numpy.array(losses).flatten()
 
@@ -166,10 +96,11 @@ class InteractiveSubcubePlot:
             head, tail = os.path.split(self.model_path)
             numpy.save(head + "/coordinates", arr=numpy.array(coordinates))
             numpy.save(head + "/losses", arr=numpy.array(losses))
+            numpy.save(head + "/id_order", arr=numpy.array(id_order))
 
         return coordinates, losses
 
-    def backend_plots(self, coordinates, losses):
+    def backend_plots(self, coordinates, losses, PLOT_RANGES):
         """Function responsible for plotting all data. One scatter plot,
             one decoded coordinates plot and one plot comparing the subcube
             before and after decoding.
@@ -178,48 +109,102 @@ class InteractiveSubcubePlot:
             coordinates (numpy array): coordinates of each subcubes scatter
             point losses (numpy array): losses of the scatterpoints
         """
+
+
+
+        #### Set the Scatterplot up ###############################
         self.tree = KDTree(coordinates, leaf_size=2)
+        self.cmap = pyplot.colormaps['plasma']
+        self.main_fig, self.main_ax = pyplot.subplots()
+        # print(numpy.min(losses), numpy.max(losses))
+        # indx_range=numpy.argwhere(losses > 0.00)
+        self.main_plot = self.main_ax.scatter(
+            coordinates[:, 0],
+            coordinates[:, 1],
+            c=losses[:],
+            s=20,
+            alpha=1,
+            cmap=self.cmap
+        )
+        self.main_ax.set_xlabel('X')
+        self.main_ax.set_ylabel('Y')
+        self.main_fig.colorbar(
+            mappable=self.main_plot
+        )
+        self.main_fig.canvas.mpl_connect("motion_notify_event", self.mouse_move)
+        self.main_fig.canvas.mpl_connect("button_press_event", self.onclick)
+        ###########################################################
 
-        # Scatter Plot of the Subcubes
-        fig1 = pyplot.figure(1)
-        pyplot.scatter(coordinates[:, 0], coordinates[:, 1], c=losses, s=0.75, alpha=0.75)
-        pyplot.colorbar()
+        print('scatter okay')
 
-        # Plot the decoded Subcubes
-        self.fig2 = pyplot.figure(2)
-        zero_output = (
-            self.model.decode(
+        '''
+        #### Find the Ranges ######################################
+        recon_ranges=[]
+        for item in tqdm(coordinates[:]):
+            recon_ranges.append(numpy.mean(self.model.decode(
                 torch.tensor(
-                    numpy.array([0, 0])
-                ).to(self.device, dtype=torch.float)
-            )
-            .cpu()
-            .detach()
-            .numpy()
-        )
-        pyplot.imshow(
-            numpy.mean(zero_output[0][0], axis=0),
-            origin="lower",
-            norm=Normalize(vmin=1e-20, vmax=1e-15),
-            cmap="gist_heat",
-        )
-        pyplot.colorbar()
+                    numpy.array(
+                        item
+                    )
+                ).to(device=self.device, dtype=torch.float)
+            ).cpu().detach().numpy()[0][0], axis=0))
+        self.vmax=numpy.max(recon_ranges)
+        self.vmin=numpy.min(recon_ranges)
+        print(self.vmax, self.vmin)
+        ###########################################################
+        '''
 
-        # Plot the comparision
-        self.fig3 = pyplot.figure(3)
-        gs = self.fig3.add_gridspec(1, 2, wspace=0)
-        self.axs = gs.subplots(sharex=True, sharey=True)
-        self.fig3.suptitle("Comparision of the Subcubes")
-        self.axs[0].imshow(
-            numpy.mean(self.dataset[0]["data"][0], axis=0),
-            origin="lower",
-            norm=Normalize(vmin=1e-20, vmax=1e-15),
-            cmap="gist_heat",
-        )
+        self.vmin=PLOT_RANGES[0]
+        self.vmax=PLOT_RANGES[1]
 
-        pyplot.figure(1)
-        pyplot.connect("motion_notify_event", self.mouse_move)
-        fig1.canvas.mpl_connect("button_press_event", self.onclick)
+
+        #### Create the motion plot ###############################
+        self.fig1, self.ax1 = pyplot.subplots()
+        self.motion_plot = self.ax1.imshow(
+            numpy.mean(
+                    self.dataset[0]['data'][0].cpu().detach().numpy(), axis=0
+            ),
+            cmap=self.cmap,
+            vmin=self.vmin,
+            vmax=self.vmax
+        )
+        self.fig1.colorbar(
+            mappable=self.motion_plot
+        )
+        ###########################################################
+
+
+
+        #### Create the comparision plot ##########################
+        self.fig2, self.ax2 = pyplot.subplots(1,2)
+        comp_plot_left = self.ax2[0].imshow(
+            numpy.mean(
+                self.dataset[0]['data'][0].cpu().detach().numpy(), axis=0
+            ),
+            cmap=self.cmap,
+            vmin=self.vmin,
+            vmax=self.vmax
+        )
+        zero_cube_data = self.model(
+            self.dataset[0]['data']
+        )[1].cpu().detach().numpy()[0][0]
+        comp_plot_right = self.ax2[1].imshow(
+            numpy.mean(
+                zero_cube_data, axis=0
+            ),
+            cmap=self.cmap,
+            vmin=self.vmin,
+            vmax=self.vmax
+        )
+        self.fig2.colorbar(
+            mappable=comp_plot_left,
+            ax=self.ax2[0]
+        )
+        self.fig2.colorbar(
+            mappable=comp_plot_right,
+            ax=self.ax2[1]
+        )
+        ###########################################################
 
         pyplot.show()
 
@@ -233,26 +218,24 @@ class InteractiveSubcubePlot:
         x = event.xdata
         y = event.ydata
         if x is not None and y is not None:
-            decoded_output = (
-                self.model.decode(
-                    torch.tensor(
-                        numpy.array([x, y])
-                    ).to(self.device, dtype=torch.float)
-                )
-                .cpu()
-                .detach()
-                .numpy()
-                # .flatten()
+            reconstructed_subcube = self.model.decode(
+                torch.tensor(
+                    numpy.array(
+                        [x, y]
+                    )
+                ).to(device=self.device, dtype=torch.float)
+            ).cpu().detach().numpy()
+
+            self.ax1.imshow(
+                numpy.mean(
+                        reconstructed_subcube[0][0], axis=0
+                ),
+                cmap=self.cmap,
+                vmin=self.vmin,
+                vmax=self.vmax
             )
-            pyplot.figure(2)
-            pyplot.cla()
-            pyplot.imshow(
-                numpy.mean(decoded_output[0][0], axis=0),
-                origin="lower",
-                norm=Normalize(vmin=1e-20, vmax=1e-15),
-                cmap="gist_heat",
-            )
-            self.fig2.canvas.draw()
+
+            self.fig1.canvas.draw()
 
     def onclick(self, event):
         """On mouse click plot the
@@ -260,82 +243,97 @@ class InteractiveSubcubePlot:
         Args:
             event (_type_): _description_
         """
-        # print('%s click: button=%d, x=%d, y=%d, xdata=%f, ydata=%f' %
-        #       ('double' if event.dblclick else 'single', event.button,
-        #        event.x, event.y, event.xdata, event.ydata))
         if event.button == 1:
             index = self.tree.query([[event.xdata, event.ydata]], k=1)[1][0][0]
-            pyplot.figure(3)
-            pyplot.cla()
-            spectrum = self.dataset[index]["data"]
-            spectrumtf = torch.unsqueeze(torch.tensor(spectrum), 0).to(
-                self.device, dtype=torch.float
+            self.ax2[0].cla()
+            self.ax2[1].cla()
+            id_order = numpy.load('/home/ace/Documents/CODE/TIM_REPO/FrankenCube/frankencube/339fusf1/checkpoints/id_order.npy')
+            print(id_order[index])
+            print(index)
+
+            enc_output, dec_output = self.model(
+                self.dataset[index]['data'].to(self.device, dtype=torch.float)
             )
-            self.optimizer.zero_grad()
-            reconstruction = self.model(spectrumtf)[1].cpu().detach().numpy()
-            # .flatten()
+            print(enc_output)
+            
+            reconstruction = numpy.mean(
+                    dec_output.cpu().detach().numpy()[0][0], axis=0
+            )
+            data = numpy.mean(
+                self.dataset[index]['data'][0].cpu().detach().numpy(), axis=0
+            )
 
-            data = numpy.clip(numpy.log10(numpy.mean(spectrum[0], axis=0)) + 24, 0, 5)
-
-            print(numpy.min(data), numpy.max(data))
-
-            self.axs[0].imshow(
+            self.ax2[0].imshow(
                 data,
-                origin="lower",
-                cmap="gist_heat",
-                vmin=0,
-                vmax=5
+                cmap=self.cmap,
+                vmin=self.vmin,
+                vmax=self.vmax
             )
-            
-            recon = numpy.clip(numpy.log10(numpy.mean(numpy.clip(reconstruction[0][0],0 ,1), axis=0)) + 24, 0, 5)
-            
-            print(numpy.min(recon), numpy.max(recon))
-            
-            self.axs[1].imshow(
-                recon,
-                origin="lower",
-                cmap="gist_heat",
-                vmin=0,
-                vmax=5
+            self.ax2[1].imshow(
+                reconstruction,
+                cmap=self.cmap,
+                vmin=self.vmin,
+                vmax=self.vmax
             )
-            pyplot.title("object #:" + str(index))
-            # pyplot.ylim(-3,3)
-            self.fig3.canvas.draw()
+
+            self.fig2.canvas.draw()
+
+
+def find_bounds(dataloader):
+    mins = []
+    maxs = []
+    for item in tqdm(dataloader):
+        mins.append(numpy.min(item['data'].cpu().detach().numpy()))
+        maxs.append(numpy.max(item['data'].cpu().detach().numpy()))
+    numpy.save(CKP_PATH + '/PLOT_RANGES', arr=numpy.array([numpy.min(mins), numpy.max(maxs)]))
+
+
+def hist_plot(CKP_PATH):
+    losses = numpy.load(CKP_PATH + '/losses.npy')
+    print(len(losses), len(numpy.argwhere(losses < 0.026)))
+    pyplot.hist(
+        losses, bins=100
+    )
+    pyplot.yscale('log')
+    pyplot.show()
 
 
 if __name__ == "__main__":
 
-    MODEL_PATH = '/root/FrankenCube/frankencube/ky6az7cs/checkpoints/epoch=4-step=640120.ckpt'
-
+    MODEL_PATH = '/home/ace/Documents/CODE/TIM_REPO/FrankenCube/frankencube/2wrtc7kv/checkpoints/epoch=186-step=182699.ckpt'
     CKP_PATH, EPOCH = os.path.split(MODEL_PATH)
-
-    subcubedataset = SubcubeDataset(
-        data_directories=["/root/prp_files"],
-        extension=".hdf5",
-        sc_side_length=16,
-        stride=16,
-        physical_paramters=["dens", "temp"],
-    )
-
     dl = DataLoader(
-            dataset=subcubedataset,
-            batch_size=32,
-            shuffle=False,
-            num_workers=20
+        dataset=SubcubeDataset(
+            data_directories=['/home/ace/Documents/DATA/prp_files'],
+            extension=".hdf5",
+            indexing=CoreSliceCubeIndex,
+            sc_side_length=16,
+            stride=16,
+            physical_paramters=["dens"],
+            transformation=IntensityScale(
+                vmin=0,
+                vmax=10,
+                shift=25,
+                tensor=False
+            )
+        ),
+        batch_size=512,
+        shuffle=False,
+        num_workers=2,  
     )
 
     ISP = InteractiveSubcubePlot(
         model_path=MODEL_PATH,
-        dataloader=dl,
-        n_epochs=8,
-        batch_size_=32,
-        learning_rate=0.001,
+        dataloader=dl
     )
 
-    print(len(subcubedataset))
 
-    # ISP.training_model(best_model=False)
-    ISP.generate_coordinates(save=True)
+
+    # ISP.generate_coordinates(save=True)
+
+    # find_bounds(dl)
+
+    # hist_plot(CKP_PATH=CKP_PATH)
 
 '''
     ISP.backend_plots(
@@ -345,5 +343,8 @@ if __name__ == "__main__":
         losses=numpy.load(
             CKP_PATH + '/losses.npy'
         ),
+        PLOT_RANGES=numpy.load(
+            CKP_PATH + '/PLOT_RANGES.npy'
+        )
     )
 '''
