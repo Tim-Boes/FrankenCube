@@ -81,7 +81,7 @@ class IntensityScale():
                 torch.log10(x) + self.shift,
                 min=self.vmin,
                 max=self.vmax
-            )
+            ) / 10
 
         else:
 
@@ -89,7 +89,7 @@ class IntensityScale():
                 torch.log10(torch.from_numpy(x)) + self.shift,
                 min=self.vmin,
                 max=self.vmax
-            )
+            ) / 10
 
         return x
 
