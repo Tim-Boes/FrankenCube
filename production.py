@@ -284,11 +284,11 @@ def hist_plot(CKP_PATH):
 
 if __name__ == "__main__":
 
-    MODEL_PATH = '/home/tboes/Dokumente/CODE/TIM_REPO/FrankenCube/frankencube/ru3pav24/checkpoints/epoch=4-step=4885.ckpt'
+    MODEL_PATH = '/root/FrankenCube/frankencube/cfr5gzfo/checkpoints/epoch=98-step=96723.ckpt'
     CKP_PATH, EPOCH = os.path.split(MODEL_PATH)
     dl = DataLoader(
         dataset=SubcubeDataset(
-            data_directories=['/home/tboes/Dokumente/DATA/prp_files'],
+            data_directories=['/root/prp_files'],
             extension=".hdf5",
             indexing=CoreSliceCubeIndex,
             sc_side_length=16,
@@ -311,11 +311,11 @@ if __name__ == "__main__":
         dataloader=dl
     )
 
-    # ISP.generate_coordinates(save=True)
+    ISP.generate_coordinates(save=True)
 
-    # find_bounds(dl, CKP_PATH)
+    find_bounds(dl, CKP_PATH)
 
-    hist_plot(CKP_PATH=CKP_PATH)
+    # hist_plot(CKP_PATH=CKP_PATH)
 
     '''
         for item in range(20):
