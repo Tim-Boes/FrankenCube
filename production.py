@@ -276,17 +276,19 @@ def hist_plot(CKP_PATH):
     pyplot.hist(
         losses, bins=100
     )
+    pyplot.ylabel('Numeber of Subcubes')
+    pyplot.xlabel('loss')
     pyplot.yscale('log')
     pyplot.show()
 
 
 if __name__ == "__main__":
 
-    MODEL_PATH = '/root/FrankenCube/frankencube/ru3pav24/checkpoints/epoch=4-step=4885.ckpt'
+    MODEL_PATH = '/home/tboes/Dokumente/CODE/TIM_REPO/FrankenCube/frankencube/ru3pav24/checkpoints/epoch=4-step=4885.ckpt'
     CKP_PATH, EPOCH = os.path.split(MODEL_PATH)
     dl = DataLoader(
         dataset=SubcubeDataset(
-            data_directories=['/root/prp_files'],
+            data_directories=['/home/tboes/Dokumente/DATA/prp_files'],
             extension=".hdf5",
             indexing=CoreSliceCubeIndex,
             sc_side_length=16,
@@ -309,20 +311,20 @@ if __name__ == "__main__":
         dataloader=dl
     )
 
-    ISP.generate_coordinates(save=True)
+    # ISP.generate_coordinates(save=True)
 
-    find_bounds(dl, CKP_PATH)
+    # find_bounds(dl, CKP_PATH)
 
-    # hist_plot(CKP_PATH=CKP_PATH)
+    hist_plot(CKP_PATH=CKP_PATH)
 
-'''
-    for item in range(20):
-       encoded, decoded = ISP.model(torch.rand(size=(1, 16, 16, 16), device=ISP.device, dtype=torch.float))
-       print(encoded)
-'''
+    '''
+        for item in range(20):
+        encoded, decoded = ISP.model(torch.rand(size=(1, 16, 16, 16), device=ISP.device, dtype=torch.float))
+        print(encoded)
+    '''
 
 
-'''
+    '''
     ISP.backend_plots(
         coordinates=numpy.load(
             CKP_PATH + '/coordinates.npy'
@@ -334,4 +336,4 @@ if __name__ == "__main__":
             CKP_PATH + '/PLOT_RANGES.npy'
         )
     )
-'''
+    '''
