@@ -283,9 +283,9 @@ def hist_plot(path):
 
 if __name__ == "__main__":
 
-    PREV_LOSS = '/root/FrankenCube/frankencube/cfr5gzfo/checkpoints/losses.npy'
-    LOSS_GATE = 0.0002
-    MODEL_PATH = '/root/FrankenCube/frankencube/p8yiyy79/checkpoints/epoch=521-step=50634.ckpt'
+    PREV_LOSS = '/root/FrankenCube/frankencube/p8yiyy79/checkpoints/losses.npy'
+    LOSS_GATE = 0.0004
+    MODEL_PATH = '/root/FrankenCube/frankencube/soercrn8/checkpoints/epoch=7295-step=36480.ckpt'
     CKP_PATH, EPOCH = os.path.split(MODEL_PATH)
     transformation_train = transforms.Compose([
             # transf.SubcubeRotation(flip=0.5),
@@ -320,7 +320,7 @@ if __name__ == "__main__":
     ISP.generate_coordinates(save=True)
 
     find_bounds(dl, CKP_PATH)
-    # hist_plot(CKP_PATH=CKP_PATH)
+    # hist_plot(path=CKP_PATH)
 
     PLOTTING = False
 

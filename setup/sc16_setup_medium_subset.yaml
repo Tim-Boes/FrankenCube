@@ -19,8 +19,8 @@ data:
     shuffle: True
     flip: 0.5
     crop_size: 16
-    loss_gate: 0.0002
-    loss_indx: '/root/FrankenCube/frankencube/cfr5gzfo/checkpoints/losses.npy'
+    loss_gate: 0.0004
+    loss_indx: '/root/FrankenCube/frankencube/p8yiyy79/checkpoints/losses.npy'
 
 optimizer:
   class_path: torch.optim.Adam
