@@ -1,21 +1,18 @@
-"""this module should generate a nice visualization for the FrankenCube model
+"""This module provides visualization for the FrankenCube model
 """
 # standard stuff
 import os
-import copy
-import matplotlib.figure
 import numpy
 
 # import matplotlib stuff
-import matplotlib
 from matplotlib import pyplot
 
 # torch stuff
 import torch
 
 # give a quick summary of the model
-from torchsummary import summary
 from torch.utils.data import DataLoader
+from torchvision import transforms
 
 # get nice progression bars for loops
 from tqdm import tqdm
@@ -26,29 +23,23 @@ from sklearn.neighbors import KDTree
 # Import The model or the autoencoder
 import models.convolutional_autoencoder as mc
 from data.hdf5_subcube_dataset import SubcubeDataset
-from data.cube_indexing import CoreSliceCubeIndex, SliceCubeIndex
-from data.transformations import IntensityScale
+import data.cube_indexing as ci
+import  data.transformations as transf
 
 
 class InteractiveSubcubePlot:
-    """_summary_"""
+    """Class for plotting and investigating runs"""
 
     def __init__(
         self,
         model_path: str,
         dataloader: DataLoader,
     ):
-        """_summary_
+        """Init the Class
 
         Args:
-            model_path (ConvolutionalAutoencoder): path to the checkpt file
-            dataset (SubcubeDataset): _description_
-            n_epochs (int): _description_
-            batch_size_ (int): _description_
-            learning_rate (int): _description_
-
-        Returns:
-            _type_: _description_
+            model_path (str): path to the ckpt file of the model
+            dataloader (DataLoader): torch DataLoader for handling all data
         """
 
         self.model_path = model_path
@@ -59,49 +50,57 @@ class InteractiveSubcubePlot:
         self.tree = None
         self.device = None
 
+        self.main_fig = None
+        self.main_ax = None
+        self.fig1 = None
+        self.ax1 = None
+        self.fig2 = None
+        self.ax2 = None
+
+        self.main_plot = None
+        self.motion_plot = None
+
+        self.cmap = None
+        self.vmin = None
+        self.vmax = None
+
         if torch.cuda.is_available():
             self.device = "cuda:0"
         else:
             self.device = "cpu"
 
         self.model = mc.ConvolutionalAutoencoderSC16Medium.load_from_checkpoint(
+            cls=None,
             checkpoint_path=self.model_path
         )
 
     def generate_coordinates(self, save: bool):
-        """_summary_
+        """Generate the Coordinates and losses of all dataloader entries
+        and store them for fast access.
 
         Args:
-            save (bool): _description_
-
-        Returns:
-            _type_: _description_
+            save (bool): When True the coordinates and loss
+            will be saved in a numpy array.
         """
         coordinates = []
         losses = []
-        id_order = []
         for item in tqdm(self.dataloader):
             data_spectrum = torch.tensor(item["data"]).to(self.device, dtype=torch.float)
             encoded, reconstructed = self.model(data_spectrum)
             loss = torch.mean(torch.square(reconstructed - data_spectrum).flatten(1), dim=1)
-            id_order.append(item['id'].cpu().detach().numpy())
             coordinates.append(encoded.cpu().detach().numpy())
             losses.append(loss.cpu().detach().numpy())
-        id_order = numpy.array(id_order).flatten()
         coordinates = numpy.array(coordinates).reshape(-1, 2)
-        print(len(numpy.unique(coordinates)))
         losses = numpy.array(losses).flatten()
 
         if save is True:
-            print("Coordinates and losses saved.")
             head, tail = os.path.split(self.model_path)
             numpy.save(head + "/coordinates", arr=numpy.array(coordinates))
             numpy.save(head + "/losses", arr=numpy.array(losses))
-            numpy.save(head + "/id_order", arr=numpy.array(id_order))
 
         return coordinates, losses
 
-    def backend_plots(self, coordinates, losses, PLOT_RANGES):
+    def backend_plots(self, coordinates, losses, plot_ranges):
         """Function responsible for plotting all data. One scatter plot,
             one decoded coordinates plot and one plot comparing the subcube
             before and after decoding.
@@ -111,14 +110,9 @@ class InteractiveSubcubePlot:
             point losses (numpy array): losses of the scatterpoints
         """
 
-
-
-        #### Set the Scatterplot up ###############################
         self.tree = KDTree(coordinates, leaf_size=2)
         self.cmap = pyplot.colormaps['plasma']
         self.main_fig, self.main_ax = pyplot.subplots()
-        # print(numpy.min(losses), numpy.max(losses))
-        # indx_range=numpy.argwhere(losses > 0.00)
         self.main_plot = self.main_ax.scatter(
             coordinates[:, 0],
             coordinates[:, 1],
@@ -134,13 +128,10 @@ class InteractiveSubcubePlot:
         )
         self.main_fig.canvas.mpl_connect("motion_notify_event", self.mouse_move)
         self.main_fig.canvas.mpl_connect("button_press_event", self.onclick)
-        ###########################################################
 
-        print('scatter okay')
-        self.vmin=PLOT_RANGES[0]
-        self.vmax=PLOT_RANGES[1]
+        self.vmin=plot_ranges[0]
+        self.vmax=plot_ranges[1]
 
-        #### Create the motion plot ###############################
         self.fig1, self.ax1 = pyplot.subplots()
         self.motion_plot = self.ax1.imshow(
             numpy.mean(
@@ -153,11 +144,7 @@ class InteractiveSubcubePlot:
         self.fig1.colorbar(
             mappable=self.motion_plot
         )
-        ###########################################################
 
-
-
-        #### Create the comparision plot ##########################
         self.fig2, self.ax2 = pyplot.subplots(1,2)
         comp_plot_left = self.ax2[0].imshow(
             numpy.mean(
@@ -186,7 +173,6 @@ class InteractiveSubcubePlot:
             mappable=comp_plot_right,
             ax=self.ax2[1]
         )
-        ###########################################################
 
         pyplot.show()
 
@@ -195,7 +181,7 @@ class InteractiveSubcubePlot:
             live plot the decoded subcube from the coordinates.
 
         Args:
-            event (_type_): _description_
+            event (mouse move): Move the cursor across the plot
         """
         x = event.xdata
         y = event.ydata
@@ -220,24 +206,21 @@ class InteractiveSubcubePlot:
             self.fig1.canvas.draw()
 
     def onclick(self, event):
-        """On mouse click plot the
+        """On mouse click plot the nearest mean subcube along 
+        the 0 Axis compared to the decoded coordinates of the 
+        subcube.
 
         Args:
-            event (_type_): _description_
+            event (mouse click): Left mouse click
         """
         if event.button == 1:
             index = self.tree.query([[event.xdata, event.ydata]], k=1)[1][0][0]
             self.ax2[0].cla()
             self.ax2[1].cla()
-            #id_order = numpy.load('/home/tboes/Dokumente/CODE/TIM_REPO/FrankenCube/frankencube/2wrtc7kv/checkpoints/id_order.npy')
-            #print(id_order[index])
-            print(index)
 
             enc_output, dec_output = self.model(
                 self.dataset[index]['data'].to(self.device, dtype=torch.float)
             )
-            print(enc_output)
-            
             reconstruction = numpy.mean(
                     dec_output.cpu().detach().numpy()[0][0], axis=0
             )
@@ -261,18 +244,28 @@ class InteractiveSubcubePlot:
             self.fig2.canvas.draw()
 
 
-def find_bounds(dataloader, CKP_PATH):
+def find_bounds(dataloader, path):
+    """find the upper and lower values of the dataset
+
+    Args:
+        dataloader (DataLoader): The current torch.utils.data.DataLoader
+        path (str): Path to the model folder
+    """
     mins = []
     maxs = []
     for item in tqdm(dataloader):
         mins.append(numpy.min(item['data'].cpu().detach().numpy()))
         maxs.append(numpy.max(item['data'].cpu().detach().numpy()))
-    numpy.save(CKP_PATH + '/PLOT_RANGES', arr=numpy.array([numpy.min(mins), numpy.max(maxs)]))
+    numpy.save(path + '/PLOT_RANGES', arr=numpy.array([numpy.min(mins), numpy.max(maxs)]))
 
 
-def hist_plot(CKP_PATH):
-    losses = numpy.load(CKP_PATH + '/losses.npy')
-    print(len(losses), len(numpy.argwhere(losses < 0.026)))
+def hist_plot(path):
+    """Plot the Histogram of the losses
+    
+    Args:
+        path (str): Path to the model model folder
+    """
+    losses = numpy.load(path + '/losses.npy')
     pyplot.hist(
         losses, bins=100
     )
@@ -286,24 +279,25 @@ if __name__ == "__main__":
 
     MODEL_PATH = '/root/FrankenCube/frankencube/cfr5gzfo/checkpoints/epoch=98-step=96723.ckpt'
     CKP_PATH, EPOCH = os.path.split(MODEL_PATH)
-    dl = DataLoader(
-        dataset=SubcubeDataset(
+    transformation_train = transforms.Compose([
+            transf.SubcubeRotation(flip=0.5),
+            transf.SubcubeCrop(crop_size=16),
+            transf.IntensityScale(vmin=0, vmax=10, shift=25)
+        ])
+    dataset = SubcubeDataset(
             data_directories=['/root/prp_files'],
             extension=".hdf5",
-            indexing=CoreSliceCubeIndex,
-            sc_side_length=16,
+            indexing=ci.CoreSliceCubeIndex,
+            sc_side_length=32,
             stride=16,
             physical_paramters=["dens"],
-            transformation=IntensityScale(
-                vmin=0,
-                vmax=10,
-                shift=25,
-                tensor=False
-            )
-        ),
+            transformation=transformation_train
+        )
+    dl = DataLoader(
+        dataset=dataset,
         batch_size=512,
         shuffle=False,
-        num_workers=30, 
+        num_workers=30,
     )
 
     ISP = InteractiveSubcubePlot(
@@ -313,27 +307,20 @@ if __name__ == "__main__":
 
     ISP.generate_coordinates(save=True)
 
-    find_bounds(dl, CKP_PATH)
-
+    # find_bounds(dl, CKP_PATH)
     # hist_plot(CKP_PATH=CKP_PATH)
 
-    '''
-        for item in range(20):
-        encoded, decoded = ISP.model(torch.rand(size=(1, 16, 16, 16), device=ISP.device, dtype=torch.float))
-        print(encoded)
-    '''
+    PLOTTING = False
 
-
-    '''
-    ISP.backend_plots(
-        coordinates=numpy.load(
-            CKP_PATH + '/coordinates.npy'
-        ),
-        losses=numpy.load(
-            CKP_PATH + '/losses.npy'
-        ),
-        PLOT_RANGES=numpy.load(
-            CKP_PATH + '/PLOT_RANGES.npy'
+    if PLOTTING is True:
+        ISP.backend_plots(
+            coordinates=numpy.load(
+                CKP_PATH + '/coordinates.npy'
+            ),
+            losses=numpy.load(
+                CKP_PATH + '/losses.npy'
+            ),
+            plot_ranges=numpy.load(
+                CKP_PATH + '/PLOT_RANGES.npy'
+            )
         )
-    )
-    '''
