@@ -11,7 +11,7 @@ from matplotlib import pyplot
 import torch
 
 # give a quick summary of the model
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Subset
 from torchvision import transforms
 
 # get nice progression bars for loops
@@ -70,7 +70,6 @@ class InteractiveSubcubePlot:
             self.device = "cpu"
 
         self.model = mc.ConvolutionalAutoencoderSC16Medium.load_from_checkpoint(
-            cls=None,
             checkpoint_path=self.model_path
         )
 
@@ -88,10 +87,17 @@ class InteractiveSubcubePlot:
             data_spectrum = torch.tensor(item["data"]).to(self.device, dtype=torch.float)
             encoded, reconstructed = self.model(data_spectrum)
             loss = torch.mean(torch.square(reconstructed - data_spectrum).flatten(1), dim=1)
-            coordinates.append(encoded.cpu().detach().numpy())
+            coordinates.append(encoded.cpu().detach().numpy().reshape(-1, 2))
             losses.append(loss.cpu().detach().numpy())
-        coordinates = numpy.array(coordinates).reshape(-1, 2)
-        losses = numpy.array(losses).flatten()
+
+
+        coords = coordinates[0]
+        loss = losses[0]
+        for index in range(len(coordinates) - 1):
+            coords = numpy.concatenate((coords, coordinates[index+1]), axis=0)
+            loss = numpy.concatenate((loss, losses[index+1]), axis=0)
+        coordinates = numpy.array(coords)  # .reshape(-1, 2)
+        losses = numpy.array(loss)  # .flatten()
 
         if save is True:
             head, tail = os.path.split(self.model_path)
@@ -256,7 +262,7 @@ def find_bounds(dataloader, path):
     for item in tqdm(dataloader):
         mins.append(numpy.min(item['data'].cpu().detach().numpy()))
         maxs.append(numpy.max(item['data'].cpu().detach().numpy()))
-    numpy.save(path + '/PLOT_RANGES', arr=numpy.array([numpy.min(mins), numpy.max(maxs)]))
+    numpy.save(path + '/plot_ranges', arr=numpy.array([numpy.min(mins), numpy.max(maxs)]))
 
 
 def hist_plot(path):
@@ -277,10 +283,12 @@ def hist_plot(path):
 
 if __name__ == "__main__":
 
-    MODEL_PATH = '/root/FrankenCube/frankencube/cfr5gzfo/checkpoints/epoch=98-step=96723.ckpt'
+    PREV_LOSS = '/root/FrankenCube/frankencube/cfr5gzfo/checkpoints/losses.npy'
+    LOSS_GATE = 0.0002
+    MODEL_PATH = '/root/FrankenCube/frankencube/p8yiyy79/checkpoints/epoch=521-step=50634.ckpt'
     CKP_PATH, EPOCH = os.path.split(MODEL_PATH)
     transformation_train = transforms.Compose([
-            transf.SubcubeRotation(flip=0.5),
+            # transf.SubcubeRotation(flip=0.5),
             transf.SubcubeCrop(crop_size=16),
             transf.IntensityScale(vmin=0, vmax=10, shift=25)
         ])
@@ -292,6 +300,10 @@ if __name__ == "__main__":
             stride=16,
             physical_paramters=["dens"],
             transformation=transformation_train
+        )
+    dataset = Subset(
+            dataset=dataset,
+            indices=numpy.argwhere(numpy.load(PREV_LOSS) > LOSS_GATE)
         )
     dl = DataLoader(
         dataset=dataset,
@@ -307,7 +319,7 @@ if __name__ == "__main__":
 
     ISP.generate_coordinates(save=True)
 
-    # find_bounds(dl, CKP_PATH)
+    find_bounds(dl, CKP_PATH)
     # hist_plot(CKP_PATH=CKP_PATH)
 
     PLOTTING = False
@@ -321,6 +333,6 @@ if __name__ == "__main__":
                 CKP_PATH + '/losses.npy'
             ),
             plot_ranges=numpy.load(
-                CKP_PATH + '/PLOT_RANGES.npy'
+                CKP_PATH + '/plot_ranges.npy'
             )
         )

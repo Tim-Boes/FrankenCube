@@ -55,6 +55,8 @@ class SubcubeCrop():
 
     def __call__(self, x):
 
+        x = torch.tensor(x)
+
         input_tensor = v2.functional.center_crop(x, self.crop_size)
         input_tensor = torch.swapaxes(input_tensor, axis0=1, axis1=2)
         input_tensor = v2.functional.center_crop(input_tensor, self.crop_size)
