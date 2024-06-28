@@ -6,6 +6,7 @@ import numpy
 
 # import matplotlib stuff
 from matplotlib import pyplot
+import plotly.graph_objects as go
 
 # torch stuff
 import torch
@@ -137,6 +138,7 @@ class InteractiveSubcubePlot:
 
         self.vmin=plot_ranges[0]
         self.vmax=plot_ranges[1]
+        print(plot_ranges)
 
         self.fig1, self.ax1 = pyplot.subplots()
         self.motion_plot = self.ax1.imshow(
@@ -250,6 +252,177 @@ class InteractiveSubcubePlot:
             self.fig2.canvas.draw()
 
 
+
+
+    def backend_plots3D(self, coordinates, losses, plot_ranges):
+        """Function responsible for plotting all data. One scatter plot,
+            one decoded coordinates plot and one plot comparing the subcube
+            before and after decoding.
+
+        Args:
+            coordinates (numpy array): coordinates of each subcubes scatter
+            point losses (numpy array): losses of the scatterpoints
+        """
+
+        self.tree = KDTree(coordinates, leaf_size=2)
+        self.cmap = pyplot.colormaps['plasma']
+        self.main_fig, self.main_ax = pyplot.subplots()
+        self.main_plot = self.main_ax.scatter(
+            coordinates[:, 0],
+            coordinates[:, 1],
+            c=losses[:],
+            s=20,
+            alpha=1,
+            cmap=self.cmap
+        )
+        self.main_ax.set_xlabel('X')
+        self.main_ax.set_ylabel('Y')
+        self.main_fig.colorbar(
+            mappable=self.main_plot
+        )
+        self.main_fig.canvas.mpl_connect("motion_notify_event", self.mouse_move3D)
+        self.main_fig.canvas.mpl_connect("button_press_event", self.onclick3D)
+
+        self.vmin=plot_ranges[0]
+        self.vmax=plot_ranges[1]
+        print(plot_ranges)
+
+
+        self.fig1, self.ax1 = pyplot.subplots()
+        self.motion_plot = self.ax1.imshow(
+            numpy.mean(
+                    self.dataset[0]['data'][0].cpu().detach().numpy(), axis=0
+            ),
+            cmap=self.cmap,
+            vmin=self.vmin,
+            vmax=self.vmax
+        )
+        self.fig1.colorbar(
+            mappable=self.motion_plot
+        )
+
+        self.fig2, self.ax2 = pyplot.subplots(1,2)
+        comp_plot_left = self.ax2[0].imshow(
+            numpy.mean(
+                self.dataset[0]['data'][0].cpu().detach().numpy(), axis=0
+            ),
+            cmap=self.cmap,
+            vmin=self.vmin,
+            vmax=self.vmax
+        )
+        zero_cube_data = self.model(
+            self.dataset[0]['data']
+        )[1].cpu().detach().numpy()[0][0]
+        comp_plot_right = self.ax2[1].imshow(
+            numpy.mean(
+                zero_cube_data, axis=0
+            ),
+            cmap=self.cmap,
+            vmin=self.vmin,
+            vmax=self.vmax
+        )
+        self.fig2.colorbar(
+            mappable=comp_plot_left,
+            ax=self.ax2[0]
+        )
+        self.fig2.colorbar(
+            mappable=comp_plot_right,
+            ax=self.ax2[1]
+        )
+
+        pyplot.show()
+
+    def mouse_move3D(self, event):
+        """Track the mouse movement inside the scatterplot and
+            live plot the decoded subcube from the coordinates.
+
+        Args:
+            event (mouse move): Move the cursor across the plot
+        """
+        x = event.xdata
+        y = event.ydata
+        if x is not None and y is not None:
+            reconstructed_subcube = self.model.decode(
+                torch.tensor(
+                    numpy.array(
+                        [x, y]
+                    )
+                ).to(device=self.device, dtype=torch.float)
+            ).cpu().detach().numpy()
+
+            self.ax1.imshow(
+                numpy.mean(
+                        reconstructed_subcube[0][0], axis=0
+                ),
+                cmap=self.cmap,
+                vmin=self.vmin,
+                vmax=self.vmax
+            )
+
+            self.fig1.canvas.draw()
+
+    def onclick3D(self, event):
+        """On mouse click plot the nearest mean subcube along 
+        the 0 Axis compared to the decoded coordinates of the 
+        subcube.
+
+        Args:
+            event (mouse click): Left mouse click
+        """
+        if event.button == 1:
+            index = self.tree.query([[event.xdata, event.ydata]], k=1)[1][0][0]
+            self.ax2[0].cla()
+            self.ax2[1].cla()
+
+            enc_output, dec_output = self.model(
+                self.dataset[index]['data'].to(self.device, dtype=torch.float)
+            )
+            reconstruction = numpy.mean(
+                    dec_output.cpu().detach().numpy()[0][0], axis=0
+            )
+            data = numpy.mean(
+                self.dataset[index]['data'][0].cpu().detach().numpy(), axis=0
+            )
+
+            self.ax2[0].imshow(
+                data,
+                cmap=self.cmap,
+                vmin=self.vmin,
+                vmax=self.vmax
+            )
+            self.ax2[1].imshow(
+                reconstruction,
+                cmap=self.cmap,
+                vmin=self.vmin,
+                vmax=self.vmax
+            )
+
+            self.fig2.canvas.draw()
+
+        X, Y, Z = numpy.mgrid[0:16:16j, 0:16:16j, 0:16:16j,]
+        # incro_tensor = torch.tensor([event.xdata, event.ydata], dtype=torch.float)
+        # values = self.model.decode(incro_tensor).cpu().detach().numpy()[0][0]
+        values = self.dataset[129056]['data'][0].cpu().detach().numpy()
+        print(index)
+        fig = go.Figure(data=go.Volume(
+            x=X.flatten(),
+            y=Y.flatten(),
+            z=Z.flatten(),
+            value=values.flatten(),
+            isomin=numpy.min(values),
+            isomax=numpy.max(values),
+            opacity=0.5, # needs to be small to see through all surfaces
+            surface_count=17, # needs to be a large number for good volume rendering
+            ))
+        fig.show()
+
+
+
+
+
+
+
+
 def find_bounds(dataloader, path):
     """find the upper and lower values of the dataset
 
@@ -281,11 +454,16 @@ def hist_plot(path):
     pyplot.show()
 
 
+
+
+
+
 if __name__ == "__main__":
 
-    PREV_LOSS = '/root/FrankenCube/frankencube/p8yiyy79/checkpoints/losses.npy'
+    PREV_LOSS = '/home/ace/Documents/CODE/TIM_REPO/FrankenCube/frankencube/p8yiyy79/checkpoints/losses.npy'
     LOSS_GATE = 0.0004
-    MODEL_PATH = '/root/FrankenCube/frankencube/soercrn8/checkpoints/epoch=7295-step=36480.ckpt'
+    # MODEL_PATH = '/home/ace/Documents/CODE/TIM_REPO/FrankenCube/frankencube/soercrn8/checkpoints/epoch=7295-step=36480.ckpt'
+    MODEL_PATH = '/home/ace/Documents/CODE/TIM_REPO/FrankenCube/frankencube/p8yiyy79/checkpoints/epoch=521-step=50634.ckpt'
     CKP_PATH, EPOCH = os.path.split(MODEL_PATH)
     transformation_train = transforms.Compose([
             # transf.SubcubeRotation(flip=0.5),
@@ -293,7 +471,7 @@ if __name__ == "__main__":
             transf.IntensityScale(vmin=0, vmax=10, shift=25)
         ])
     dataset = SubcubeDataset(
-            data_directories=['/root/prp_files'],
+            data_directories=['/media/ace/Warehouse/DATA/prp_files'],
             extension=".hdf5",
             indexing=ci.CoreSliceCubeIndex,
             sc_side_length=32,
@@ -301,15 +479,17 @@ if __name__ == "__main__":
             physical_paramters=["dens"],
             transformation=transformation_train
         )
+    '''
     dataset = Subset(
             dataset=dataset,
             indices=numpy.argwhere(numpy.load(PREV_LOSS) > LOSS_GATE)
         )
+    '''
     dl = DataLoader(
         dataset=dataset,
         batch_size=512,
         shuffle=False,
-        num_workers=30,
+        num_workers=12,
     )
 
     ISP = InteractiveSubcubePlot(
@@ -317,15 +497,20 @@ if __name__ == "__main__":
         dataloader=dl
     )
 
-    ISP.generate_coordinates(save=True)
+    # ISP.generate_coordinates(save=True)
 
-    find_bounds(dl, CKP_PATH)
+    # find_bounds(dl, CKP_PATH)
     # hist_plot(path=CKP_PATH)
+
+    uniq = []
+    for indx in tqdm(range(len(dataset))):
+        uniq = numpy.unique(dataset[indx]['data'][0])
+    numpy.max(uniq)
 
     PLOTTING = False
 
     if PLOTTING is True:
-        ISP.backend_plots(
+        ISP.backend_plots3D(
             coordinates=numpy.load(
                 CKP_PATH + '/coordinates.npy'
             ),
