@@ -114,7 +114,11 @@ class SliceCubeIndex(CubeIndex):
         y = int((index - z * self.floor_area) / self.floor_side_length)
         x = int((index - z * self.floor_area) - (y * self.floor_side_length))
 
-        coord = np.array([x, y, z])
+        coord = np.array([
+            x * self.stride,
+            y * self.stride,
+            z * self.stride
+        ])
         return coord
 
     def coordinates_to_index(self, clean):
@@ -227,9 +231,9 @@ class CoreSliceCubeIndex(CubeIndex):
         x = int((index - z * self.floor_area) - (y * self.floor_side_length))
 
         coord = np.array([
-            x + self.coord_offset,
-            y + self.coord_offset,
-            z + self.coord_offset
+            x * self.stride + self.coord_offset,
+            y * self.stride + self.coord_offset,
+            z * self.stride + self.coord_offset
         ]) 
         return coord
 

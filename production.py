@@ -460,10 +460,10 @@ def hist_plot(path):
 
 if __name__ == "__main__":
 
-    PREV_LOSS = '/home/ace/Documents/CODE/TIM_REPO/FrankenCube/frankencube/p8yiyy79/checkpoints/losses.npy'
+    PREV_LOSS = '/root/FrankenCube/frankencube/p8yiyy79/checkpoints/losses.npy'
     LOSS_GATE = 0.0004
     # MODEL_PATH = '/home/ace/Documents/CODE/TIM_REPO/FrankenCube/frankencube/soercrn8/checkpoints/epoch=7295-step=36480.ckpt'
-    MODEL_PATH = '/home/ace/Documents/CODE/TIM_REPO/FrankenCube/frankencube/p8yiyy79/checkpoints/epoch=521-step=50634.ckpt'
+    MODEL_PATH = '/root/FrankenCube/frankencube/aihrus1b/checkpoints/epoch=70-step=69367.ckpt'
     CKP_PATH, EPOCH = os.path.split(MODEL_PATH)
     transformation_train = transforms.Compose([
             # transf.SubcubeRotation(flip=0.5),
@@ -471,7 +471,7 @@ if __name__ == "__main__":
             transf.IntensityScale(vmin=0, vmax=10, shift=25)
         ])
     dataset = SubcubeDataset(
-            data_directories=['/media/ace/Warehouse/DATA/prp_files'],
+            data_directories=['/root/prp_files'],
             extension=".hdf5",
             indexing=ci.CoreSliceCubeIndex,
             sc_side_length=32,
@@ -497,15 +497,11 @@ if __name__ == "__main__":
         dataloader=dl
     )
 
-    # ISP.generate_coordinates(save=True)
+    ISP.generate_coordinates(save=True)
 
-    # find_bounds(dl, CKP_PATH)
+    find_bounds(dl, CKP_PATH)
+
     # hist_plot(path=CKP_PATH)
-
-    uniq = []
-    for indx in tqdm(range(len(dataset))):
-        uniq = numpy.unique(dataset[indx]['data'][0])
-    numpy.max(uniq)
 
     PLOTTING = False
 
