@@ -271,7 +271,7 @@ class InteractiveSubcubePlot:
             coordinates[:, 0],
             coordinates[:, 1],
             c=losses[:],
-            s=20,
+            s=1,
             alpha=1,
             cmap=self.cmap
         )
@@ -400,17 +400,16 @@ class InteractiveSubcubePlot:
             self.fig2.canvas.draw()
 
         X, Y, Z = numpy.mgrid[0:16:16j, 0:16:16j, 0:16:16j,]
-        # incro_tensor = torch.tensor([event.xdata, event.ydata], dtype=torch.float)
-        # values = self.model.decode(incro_tensor).cpu().detach().numpy()[0][0]
-        values = self.dataset[129056]['data'][0].cpu().detach().numpy()
+        # incro_tensor = torch.tensor([event.xdata, event.ydata], dtype=torch.float)        
+        value = dec_output.cpu().detach().numpy()[0][0]
         print(index)
         fig = go.Figure(data=go.Volume(
             x=X.flatten(),
             y=Y.flatten(),
             z=Z.flatten(),
-            value=values.flatten(),
-            isomin=numpy.min(values),
-            isomax=numpy.max(values),
+            value=value.flatten(),
+            isomin=numpy.min(value),
+            isomax=numpy.max(value),
             opacity=0.5, # needs to be small to see through all surfaces
             surface_count=17, # needs to be a large number for good volume rendering
             ))
@@ -460,10 +459,10 @@ def hist_plot(path):
 
 if __name__ == "__main__":
 
-    PREV_LOSS = '/root/FrankenCube/frankencube/p8yiyy79/checkpoints/losses.npy'
-    LOSS_GATE = 0.0004
+    PREV_LOSS = '/home/tboes/Dokumente/CODE/TIM_REPO/FrankenCube/frankencube/aihrus1b/checkpoints/losses.npy'
+    LOSS_GATE = 0.005
     # MODEL_PATH = '/home/ace/Documents/CODE/TIM_REPO/FrankenCube/frankencube/soercrn8/checkpoints/epoch=7295-step=36480.ckpt'
-    MODEL_PATH = '/root/FrankenCube/frankencube/aihrus1b/checkpoints/epoch=70-step=69367.ckpt'
+    MODEL_PATH = '/home/tboes/Dokumente/CODE/TIM_REPO/FrankenCube/frankencube/aihrus1b/checkpoints/epoch=70-step=69367.ckpt'
     CKP_PATH, EPOCH = os.path.split(MODEL_PATH)
     transformation_train = transforms.Compose([
             # transf.SubcubeRotation(flip=0.5),
@@ -471,7 +470,7 @@ if __name__ == "__main__":
             transf.IntensityScale(vmin=0, vmax=10, shift=25)
         ])
     dataset = SubcubeDataset(
-            data_directories=['/root/prp_files'],
+            data_directories=['/home/tboes/Dokumente/DATA/prp_files'],
             extension=".hdf5",
             indexing=ci.CoreSliceCubeIndex,
             sc_side_length=32,
@@ -479,17 +478,19 @@ if __name__ == "__main__":
             physical_paramters=["dens"],
             transformation=transformation_train
         )
+
+    indices = numpy.argwhere(numpy.load(PREV_LOSS) > LOSS_GATE)
     '''
     dataset = Subset(
             dataset=dataset,
-            indices=numpy.argwhere(numpy.load(PREV_LOSS) > LOSS_GATE)
+            indices=indices
         )
     '''
     dl = DataLoader(
         dataset=dataset,
         batch_size=512,
         shuffle=False,
-        num_workers=12,
+        num_workers=4,
     )
 
     ISP = InteractiveSubcubePlot(
@@ -497,22 +498,25 @@ if __name__ == "__main__":
         dataloader=dl
     )
 
-    ISP.generate_coordinates(save=True)
+    # ISP.generate_coordinates(save=True)
 
-    find_bounds(dl, CKP_PATH)
+    # find_bounds(dl, CKP_PATH)
 
-    # hist_plot(path=CKP_PATH)
+    print(len(indices))
+
+    hist_plot(path=CKP_PATH)
 
     PLOTTING = False
 
     if PLOTTING is True:
+        print(len(dataset))
         ISP.backend_plots3D(
             coordinates=numpy.load(
                 CKP_PATH + '/coordinates.npy'
-            ),
+            )[indices].reshape(-1, 2),
             losses=numpy.load(
                 CKP_PATH + '/losses.npy'
-            ),
+            )[indices],
             plot_ranges=numpy.load(
                 CKP_PATH + '/plot_ranges.npy'
             )
