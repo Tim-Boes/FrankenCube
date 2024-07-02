@@ -459,10 +459,10 @@ def hist_plot(path):
 
 if __name__ == "__main__":
 
-    PREV_LOSS = '/home/tboes/Dokumente/CODE/TIM_REPO/FrankenCube/frankencube/aihrus1b/checkpoints/losses.npy'
+    PREV_LOSS = '/root/FrankenCube/frankencube/aihrus1b/checkpoints/losses.npy'    
     LOSS_GATE = 0.005
     # MODEL_PATH = '/home/ace/Documents/CODE/TIM_REPO/FrankenCube/frankencube/soercrn8/checkpoints/epoch=7295-step=36480.ckpt'
-    MODEL_PATH = '/home/tboes/Dokumente/CODE/TIM_REPO/FrankenCube/frankencube/aihrus1b/checkpoints/epoch=70-step=69367.ckpt'
+    MODEL_PATH = '/root/FrankenCube/frankencube/90e1ba8g/checkpoints/epoch=217734-step=435470.ckpt'
     CKP_PATH, EPOCH = os.path.split(MODEL_PATH)
     transformation_train = transforms.Compose([
             # transf.SubcubeRotation(flip=0.5),
@@ -470,7 +470,7 @@ if __name__ == "__main__":
             transf.IntensityScale(vmin=0, vmax=10, shift=25)
         ])
     dataset = SubcubeDataset(
-            data_directories=['/home/tboes/Dokumente/DATA/prp_files'],
+            data_directories=['/root/prp_files'],
             extension=".hdf5",
             indexing=ci.CoreSliceCubeIndex,
             sc_side_length=32,
@@ -498,13 +498,13 @@ if __name__ == "__main__":
         dataloader=dl
     )
 
-    # ISP.generate_coordinates(save=True)
+    ISP.generate_coordinates(save=True)
 
-    # find_bounds(dl, CKP_PATH)
+    find_bounds(dl, CKP_PATH)
 
-    print(len(indices))
+    # print(len(indices))
 
-    hist_plot(path=CKP_PATH)
+    # hist_plot(path=CKP_PATH)
 
     PLOTTING = False
 
