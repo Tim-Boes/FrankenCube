@@ -7,6 +7,7 @@ import numpy
 # import matplotlib stuff
 from matplotlib import pyplot
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 # torch stuff
 import torch
@@ -281,7 +282,7 @@ class InteractiveSubcubePlot:
             mappable=self.main_plot
         )
         self.main_fig.canvas.mpl_connect("motion_notify_event", self.mouse_move3D)
-        self.main_fig.canvas.mpl_connect("button_press_event", self.onclick3D)
+        self.main_fig.canvas.mpl_connect("button_press_event", self.onclick3D_Full)
 
         self.vmin=plot_ranges[0]
         self.vmax=plot_ranges[1]
@@ -417,6 +418,116 @@ class InteractiveSubcubePlot:
 
 
 
+    def onclick3D_Full(self, event):
+        """_summary_
+
+        Args:
+            event (_type_): _description_
+        """
+        if event.button == 1:
+            index = self.tree.query([[event.xdata, event.ydata]], k=1)[1][0][0]
+            self.ax2[0].cla()
+            self.ax2[1].cla()
+
+            enc_output, dec_output = self.model(
+                self.dataset[index]['data'].to(self.device, dtype=torch.float)
+            )
+            reconstruction = numpy.mean(
+                    dec_output.cpu().detach().numpy()[0][0], axis=0
+            )
+            data = numpy.mean(
+                self.dataset[index]['data'][0].cpu().detach().numpy(), axis=0
+            )
+
+            self.ax2[0].imshow(
+                data,
+                cmap=self.cmap,
+                vmin=self.vmin,
+                vmax=self.vmax
+            )
+            self.ax2[1].imshow(
+                reconstruction,
+                cmap=self.cmap,
+                vmin=self.vmin,
+                vmax=self.vmax
+            )
+
+            self.fig2.canvas.draw()
+
+
+            fig = make_subplots(
+                rows=2, cols=2,
+                specs=[[{'type': 'volume'}, {'type': 'volume'}],
+                    [{'type': 'volume'}, {'type': 'volume'}]],
+                subplot_titles=[
+                    'Original',
+                    'reconstructed Subcube',
+                    'constructed from Coordinates'
+                ]
+                )
+
+            X, Y, Z = numpy.mgrid[0:16:16j, 0:16:16j, 0:16:16j,]
+            original_subcube = self.dataset[index]['data'][0].cpu().detach().numpy()
+            decoded_subcube = self.model(
+                    self.dataset[index]['data'].to(self.device, dtype=torch.float)
+            )[1].cpu().detach().numpy()[0][0]
+            interpolated_subcube = self.model.decode(
+                torch.tensor(
+                    [event.xdata, event.ydata],
+                    dtype=torch.float
+                )
+            ).cpu().detach().numpy()[0][0]
+
+            local_min = numpy.min([original_subcube, decoded_subcube, interpolated_subcube])
+            local_max = numpy.max([original_subcube, decoded_subcube, interpolated_subcube])
+
+
+            fig.add_trace(go.Volume(
+                x=X.flatten(),
+                y=Y.flatten(),
+                z=Z.flatten(),
+                value=original_subcube.flatten(),
+                isomin=local_min,
+                isomax=local_max,
+                opacity=0.1,
+                surface_count=40,
+                opacityscale="uniform",
+                ), row=1, col=1, )
+            fig.add_trace(go.Volume(
+                x=X.flatten(),
+                y=Y.flatten(),
+                z=Z.flatten(),
+                value=decoded_subcube.flatten(),
+                isomin=local_min,
+                isomax=local_max,
+                opacity=0.1,
+                surface_count=40,
+                opacityscale="uniform",
+                ), row=1, col=2)
+            fig.add_trace(go.Volume(
+                x=X.flatten(),
+                y=Y.flatten(),
+                z=Z.flatten(),
+                value=interpolated_subcube.flatten(),
+                isomin=local_min,
+                isomax=local_max,
+                opacity=0.1,
+                surface_count=40,
+                opacityscale="uniform",
+                ), row=2, col=1)
+            fig.show()
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -453,16 +564,11 @@ def hist_plot(path):
     pyplot.show()
 
 
-
-
-
-
 if __name__ == "__main__":
 
-    PREV_LOSS = '/root/FrankenCube/frankencube/aihrus1b/checkpoints/losses.npy'    
+    PREV_LOSS = '/home/ace/Documents/CODE/TIM_REPO/FrankenCube/frankencube/aihrus1b/checkpoints/losses.npy'    
     LOSS_GATE = 0.005
-    # MODEL_PATH = '/home/ace/Documents/CODE/TIM_REPO/FrankenCube/frankencube/soercrn8/checkpoints/epoch=7295-step=36480.ckpt'
-    MODEL_PATH = '/root/FrankenCube/frankencube/90e1ba8g/checkpoints/epoch=217734-step=435470.ckpt'
+    MODEL_PATH = '/home/ace/Documents/CODE/TIM_REPO/FrankenCube/frankencube/90e1ba8g/checkpoints/epoch=217734-step=435470.ckpt'
     CKP_PATH, EPOCH = os.path.split(MODEL_PATH)
     transformation_train = transforms.Compose([
             # transf.SubcubeRotation(flip=0.5),
@@ -470,7 +576,7 @@ if __name__ == "__main__":
             transf.IntensityScale(vmin=0, vmax=10, shift=25)
         ])
     dataset = SubcubeDataset(
-            data_directories=['/root/prp_files'],
+            data_directories=['/media/ace/Warehouse/DATA/prp_files'],
             extension=".hdf5",
             indexing=ci.CoreSliceCubeIndex,
             sc_side_length=32,
@@ -479,7 +585,7 @@ if __name__ == "__main__":
             transformation=transformation_train
         )
 
-    indices = numpy.argwhere(numpy.load(PREV_LOSS) > LOSS_GATE)
+    #indices = numpy.argwhere(numpy.load(PREV_LOSS) > LOSS_GATE)
     '''
     dataset = Subset(
             dataset=dataset,
@@ -498,25 +604,23 @@ if __name__ == "__main__":
         dataloader=dl
     )
 
-    ISP.generate_coordinates(save=True)
+    # ISP.generate_coordinates(save=True)
 
-    find_bounds(dl, CKP_PATH)
-
-    # print(len(indices))
+    # find_bounds(dl, CKP_PATH)
 
     # hist_plot(path=CKP_PATH)
 
-    PLOTTING = False
+    PLOTTING = True
 
     if PLOTTING is True:
         print(len(dataset))
         ISP.backend_plots3D(
             coordinates=numpy.load(
                 CKP_PATH + '/coordinates.npy'
-            )[indices].reshape(-1, 2),
+            ),
             losses=numpy.load(
                 CKP_PATH + '/losses.npy'
-            )[indices],
+            ),
             plot_ranges=numpy.load(
                 CKP_PATH + '/plot_ranges.npy'
             )
