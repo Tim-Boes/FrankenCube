@@ -238,7 +238,6 @@ class ConvolutionalAutoencoderSC16(L.LightningModule):
         )
         return loss
 
-
 class ConvolutionalAutoencoderSC16Long(L.LightningModule):
     """The LightningCore module organizes the code
     """
@@ -411,7 +410,6 @@ class ConvolutionalAutoencoderSC16Long(L.LightningModule):
             logger=True
         )
         return loss
-
 
 class ConvolutionalAutoencoderSC16Medium(L.LightningModule):
     """The LightningCore module organizes the code

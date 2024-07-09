@@ -1,6 +1,6 @@
-# DOCKERFILE FOR BIRKA
+# DOCKERFILE FOR NVIDIA 
 
-FROM ubuntu:22.04
+FROM nvcr.io/nvidia/pytorch:24.03-py3
 
 # SPECIFY YOUR WORKING DIR
 
@@ -12,6 +12,4 @@ COPY ./ .
 
 # RUN ALL THE COMMANDS NEEDED AT THE START
 
-RUN apt update && \
-    apt install -y git-all && \
-    git clone https://github.com/Tim-Boes/FrankenCube.git
+RUN apt update

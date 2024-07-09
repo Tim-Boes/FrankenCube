@@ -1,0 +1,52 @@
+seed_everything: 45
+
+model:
+  class_path: models.ConvolutionalAutoencoderSC16Medium
+  init_args:
+    bottleneck: 2
+
+data:
+  class_path: data.SubsetSubcubeDataModule
+  init_args:
+    data_directories: ['PATH']
+    extension: '.hdf5'
+    sc_side_length: 32
+    stride: 16
+    indexing: CoreSliceCubeIndex
+    physical_parameters: ['dens']
+    batch_size: 512
+    num_workers: 30
+    shuffle: True
+    flip: 0.5
+    crop_size: 16
+    loss_gate: 0.005
+    loss_indx: 'PATH'
+
+optimizer:
+  class_path: torch.optim.Adam
+  init_args:
+    lr: 0.0001
+
+lr_scheduler:
+  class_path: lightning.pytorch.cli.ReduceLROnPlateau
+  init_args:
+    mode: min
+    factor: 0.1
+    patience: 500
+    cooldown: 500
+    min_lr: 1.e-5
+    monitor: train_loss
+    verbose: True
+
+trainer:
+  max_epochs: -1
+  accelerator: gpu
+  logger:
+    class_path: lightning.pytorch.loggers.WandbLogger
+    init_args:
+      project: frankencube
+      log_model: True
+  # devices: 4
+  # precision: 32
+
+  # ckpt_path: 'PATH_TO_CHECKPOINT_FILE'

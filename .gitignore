@@ -1,5 +1,6 @@
 /venv
-/wandb
 /data/__pycache__
 /models/__pycache__
-config.yaml
+/setup/sc16_setup_medium.yaml
+/setup/sc16_setup_medium_subset.yaml
+
