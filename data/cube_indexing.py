@@ -1,4 +1,3 @@
-# %%
 """Module used for abstract class methods."""
 from abc import ABC, abstractmethod
 import numpy as np

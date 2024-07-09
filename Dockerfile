@@ -10,6 +10,6 @@ WORKDIR /home/
 
 COPY ./ .
 
-# RUN ALL THE COMMANDS NEEDED AT THE START
+# RUN UPDATE
 
 RUN apt update

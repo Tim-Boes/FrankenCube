@@ -9,7 +9,7 @@
             "type": "debugpy",
             "request": "launch",
             "program": "frankencube.py",
-            "args": "fit --config ./setup/sc16_setup_long.yaml",
+            "args": "fit --config ./setup/sc16_setup_medium.yaml",
             "console": "integratedTerminal",
             "justMyCode": true
         }
