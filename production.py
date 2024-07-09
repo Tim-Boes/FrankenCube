@@ -75,6 +75,7 @@ class InteractiveSubcubePlot:
             checkpoint_path=self.model_path
         )
 
+
     def generate_coordinates(self, save: bool):
         """Generate the Coordinates and losses of all dataloader entries
         and store them for fast access.
@@ -107,6 +108,7 @@ class InteractiveSubcubePlot:
             numpy.save(head + "/losses", arr=numpy.array(losses))
 
         return coordinates, losses
+
 
     def backend_plots(self, coordinates, losses, plot_ranges):
         """Function responsible for plotting all data. One scatter plot,
@@ -185,6 +187,7 @@ class InteractiveSubcubePlot:
 
         pyplot.show()
 
+
     def mouse_move(self, event):
         """Track the mouse movement inside the scatterplot and
             live plot the decoded subcube from the coordinates.
@@ -213,6 +216,7 @@ class InteractiveSubcubePlot:
             )
 
             self.fig1.canvas.draw()
+
 
     def onclick(self, event):
         """On mouse click plot the nearest mean subcube along 
@@ -253,8 +257,6 @@ class InteractiveSubcubePlot:
             self.fig2.canvas.draw()
 
 
-
-
     def backend_plots3D(self, coordinates, losses, plot_ranges):
         """Function responsible for plotting all data. One scatter plot,
             one decoded coordinates plot and one plot comparing the subcube
@@ -282,7 +284,7 @@ class InteractiveSubcubePlot:
             mappable=self.main_plot
         )
         self.main_fig.canvas.mpl_connect("motion_notify_event", self.mouse_move3D)
-        self.main_fig.canvas.mpl_connect("button_press_event", self.onclick3D_Full)
+        self.main_fig.canvas.mpl_connect("button_press_event", self.onclick3D)
 
         self.vmin=plot_ranges[0]
         self.vmax=plot_ranges[1]
@@ -333,6 +335,7 @@ class InteractiveSubcubePlot:
 
         pyplot.show()
 
+
     def mouse_move3D(self, event):
         """Track the mouse movement inside the scatterplot and
             live plot the decoded subcube from the coordinates.
@@ -361,64 +364,9 @@ class InteractiveSubcubePlot:
             )
 
             self.fig1.canvas.draw()
+            
 
     def onclick3D(self, event):
-        """On mouse click plot the nearest mean subcube along 
-        the 0 Axis compared to the decoded coordinates of the 
-        subcube.
-
-        Args:
-            event (mouse click): Left mouse click
-        """
-        if event.button == 1:
-            index = self.tree.query([[event.xdata, event.ydata]], k=1)[1][0][0]
-            self.ax2[0].cla()
-            self.ax2[1].cla()
-
-            enc_output, dec_output = self.model(
-                self.dataset[index]['data'].to(self.device, dtype=torch.float)
-            )
-            reconstruction = numpy.mean(
-                    dec_output.cpu().detach().numpy()[0][0], axis=0
-            )
-            data = numpy.mean(
-                self.dataset[index]['data'][0].cpu().detach().numpy(), axis=0
-            )
-
-            self.ax2[0].imshow(
-                data,
-                cmap=self.cmap,
-                vmin=self.vmin,
-                vmax=self.vmax
-            )
-            self.ax2[1].imshow(
-                reconstruction,
-                cmap=self.cmap,
-                vmin=self.vmin,
-                vmax=self.vmax
-            )
-
-            self.fig2.canvas.draw()
-
-        X, Y, Z = numpy.mgrid[0:16:16j, 0:16:16j, 0:16:16j,]
-        # incro_tensor = torch.tensor([event.xdata, event.ydata], dtype=torch.float)        
-        value = dec_output.cpu().detach().numpy()[0][0]
-        print(index)
-        fig = go.Figure(data=go.Volume(
-            x=X.flatten(),
-            y=Y.flatten(),
-            z=Z.flatten(),
-            value=value.flatten(),
-            isomin=numpy.min(value),
-            isomax=numpy.max(value),
-            opacity=0.5, # needs to be small to see through all surfaces
-            surface_count=17, # needs to be a large number for good volume rendering
-            ))
-        fig.show()
-
-
-
-    def onclick3D_Full(self, event):
         """_summary_
 
         Args:
@@ -518,21 +466,6 @@ class InteractiveSubcubePlot:
             fig.show()
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def find_bounds(dataloader, path):
     """find the upper and lower values of the dataset
 
@@ -566,9 +499,9 @@ def hist_plot(path):
 
 if __name__ == "__main__":
 
-    PREV_LOSS = '/home/ace/Documents/CODE/TIM_REPO/FrankenCube/frankencube/aihrus1b/checkpoints/losses.npy'    
+    PREV_LOSS = './frankencube/aihrus1b/checkpoints/losses.npy'    
     LOSS_GATE = 0.005
-    MODEL_PATH = '/home/ace/Documents/CODE/TIM_REPO/FrankenCube/frankencube/90e1ba8g/checkpoints/epoch=217734-step=435470.ckpt'
+    MODEL_PATH = './frankencube/90e1ba8g/checkpoints/epoch=217734-step=435470.ckpt'
     CKP_PATH, EPOCH = os.path.split(MODEL_PATH)
     transformation_train = transforms.Compose([
             # transf.SubcubeRotation(flip=0.5),
@@ -576,7 +509,7 @@ if __name__ == "__main__":
             transf.IntensityScale(vmin=0, vmax=10, shift=25)
         ])
     dataset = SubcubeDataset(
-            data_directories=['/media/ace/Warehouse/DATA/prp_files'],
+            data_directories=['PATH'],
             extension=".hdf5",
             indexing=ci.CoreSliceCubeIndex,
             sc_side_length=32,
@@ -585,13 +518,11 @@ if __name__ == "__main__":
             transformation=transformation_train
         )
 
-    #indices = numpy.argwhere(numpy.load(PREV_LOSS) > LOSS_GATE)
-    '''
+    indices = numpy.argwhere(numpy.load(PREV_LOSS) > LOSS_GATE)
     dataset = Subset(
             dataset=dataset,
             indices=indices
         )
-    '''
     dl = DataLoader(
         dataset=dataset,
         batch_size=512,
@@ -604,13 +535,13 @@ if __name__ == "__main__":
         dataloader=dl
     )
 
-    # ISP.generate_coordinates(save=True)
+    ISP.generate_coordinates(save=False)
 
-    # find_bounds(dl, CKP_PATH)
+    find_bounds(dl, CKP_PATH)
 
-    # hist_plot(path=CKP_PATH)
+    hist_plot(path=CKP_PATH)
 
-    PLOTTING = True
+    PLOTTING = False
 
     if PLOTTING is True:
         print(len(dataset))
